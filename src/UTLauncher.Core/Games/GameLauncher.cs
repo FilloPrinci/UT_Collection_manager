@@ -29,7 +29,9 @@ public sealed class GameLauncher(ProcessRunner processRunner, IPlatform platform
                 $"Launch executable not found: '{exePath}'. Is '{game.Name}' installed correctly?", exePath);
         }
 
-        var workingDirectory = Path.GetDirectoryName(exePath) ?? installPath;
+        var workingDirectory = string.IsNullOrWhiteSpace(launchEntry.WorkingDir)
+            ? Path.GetDirectoryName(exePath) ?? installPath
+            : Path.Combine(installPath, launchEntry.WorkingDir.Replace('/', Path.DirectorySeparatorChar));
         var arguments = string.IsNullOrWhiteSpace(launchEntry.Args)
             ? []
             : launchEntry.Args.Split(' ', StringSplitOptions.RemoveEmptyEntries);

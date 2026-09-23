@@ -11,7 +11,7 @@ namespace UTLauncher.Cli.Commands;
 
 public static class InstallCommand
 {
-    private static readonly HashSet<string> SupportedGameIds = ["ut99", "ut2004"];
+    private static readonly HashSet<string> SupportedGameIds = ["ut99", "ut2004", "ut4"];
 
     public static async Task<int> RunAsync(
         IReadOnlyList<string> args,
@@ -70,13 +70,24 @@ public static class InstallCommand
         var processRunner = new ProcessRunner(loggerFactory.CreateLogger<ProcessRunner>());
         var registryPath = Path.Combine(platform.GetRootDirectory(), "installations.json");
         var registry = new InstallationRegistry(registryPath);
-        var windowsDependencyInstaller = new WindowsDependencyInstaller(downloader, loggerFactory.CreateLogger<WindowsDependencyInstaller>());
+        var windowsDependencyInstaller = new WindowsDependencyInstaller(downloader, processRunner, loggerFactory.CreateLogger<WindowsDependencyInstaller>());
         var progress = new ConsoleProgressReporter();
 
         try
         {
             InstallationRecord record;
-            if (gameId == "ut2004")
+            if (gameId == "ut4")
+            {
+                var ut4Installer = new Ut4Installer(
+                    downloader,
+                    windowsDependencyInstaller,
+                    registry,
+                    platform,
+                    loggerFactory.CreateLogger<Ut4Installer>());
+                record = await ut4Installer.InstallAsync(game, destination, progress, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            else if (gameId == "ut2004")
             {
                 var toolManager = new ToolManager(downloader, platform);
                 var systemLibraryLocator = new SystemLibraryLocator(processRunner);
@@ -113,13 +124,14 @@ public static class InstallCommand
             Console.WriteLine($"Installed {game.Name} ({record.VersionCode}) to {record.InstallPath}");
             return 0;
         }
-        catch (Exception ex) when (ex is DownloadException or InvalidOperationException or ToolNotConfiguredException)
+        catch (Exception ex) when (ex is DownloadException or InvalidOperationException or ToolNotConfiguredException or HashMismatchException)
         {
             logger.LogError(ex, "Installation of {GameId} failed", gameId);
             Console.Error.WriteLine();
             Console.Error.WriteLine($"Error: {ex.Message}");
 
-            if (ex.InnerException is HashMismatchException hashMismatch)
+            var hashMismatch = ex as HashMismatchException ?? ex.InnerException as HashMismatchException;
+            if (hashMismatch is not null)
             {
                 Console.Error.WriteLine($"  expected sha256: {hashMismatch.ExpectedSha256}");
                 Console.Error.WriteLine($"  actual sha256:   {hashMismatch.ActualSha256}");

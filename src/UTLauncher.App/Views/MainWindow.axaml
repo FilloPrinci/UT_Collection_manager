@@ -77,6 +77,15 @@
                                                 <Button Content="Open folder"
                                                         Command="{Binding OpenFolderCommand}"
                                                         IsVisible="{Binding IsInstalled}" />
+                                                <Button Content="Register account"
+                                                        Command="{Binding OpenRegistrationCommand}">
+                                                    <Button.IsVisible>
+                                                        <MultiBinding Converter="{x:Static conv:BoolConverters.And}">
+                                                            <Binding Path="IsInstalled" />
+                                                            <Binding Path="HasAccountRegistration" />
+                                                        </MultiBinding>
+                                                    </Button.IsVisible>
+                                                </Button>
                                             </StackPanel>
                                         </Grid>
 

@@ -11,7 +11,7 @@ namespace UTLauncher.App.ViewModels;
 
 public partial class GameViewModel : ViewModelBase
 {
-    private static readonly HashSet<string> SupportedGameIds = ["ut99", "ut2004"];
+    private static readonly HashSet<string> SupportedGameIds = ["ut99", "ut2004", "ut4"];
 
     private readonly GameEntry _game;
     private readonly AppServices _services;
@@ -21,7 +21,10 @@ public partial class GameViewModel : ViewModelBase
     {
         _game = game;
         _services = services;
-        InstallPath = services.DefaultInstallPathFor(game.Id.ToUpperInvariant());
+        var defaultPath = services.DefaultInstallPathFor(game.Id.ToUpperInvariant());
+        // Ut4Installer requires the destination folder to be literally named "UnrealTournament"
+        // (the game zip's own top-level folder), unlike UT99/UT2004's free-form install path.
+        InstallPath = game.Id == "ut4" ? Path.Combine(defaultPath, "UnrealTournament") : defaultPath;
         IsSupported = SupportedGameIds.Contains(game.Id);
         StatusText = IsSupported ? "Not installed" : "Not available yet";
     }
@@ -33,6 +36,8 @@ public partial class GameViewModel : ViewModelBase
     public string VersionCode => _game.VersionCode;
 
     public bool IsSupported { get; }
+
+    public bool HasAccountRegistration => !string.IsNullOrWhiteSpace(_game.AccountRegistrationUrl);
 
     [ObservableProperty]
     public partial string StatusText { get; set; }
@@ -131,6 +136,17 @@ public partial class GameViewModel : ViewModelBase
     private Task<Core.InstallRegistry.InstallationRecord> RunInstallerAsync(
         UiTaskProgress progress, CancellationToken cancellationToken)
     {
+        if (Id == "ut4")
+        {
+            var installer = new Ut4Installer(
+                _services.Downloader,
+                _services.WindowsDependencyInstaller,
+                _services.Registry,
+                _services.Platform,
+                _services.LoggerFactory.CreateLogger<Ut4Installer>());
+            return installer.InstallAsync(_game, InstallPath, progress, cancellationToken);
+        }
+
         if (Id == "ut2004")
         {
             var installer = new Ut2004Installer(
@@ -212,6 +228,28 @@ public partial class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             _services.LoggerFactory.CreateLogger<GameViewModel>().LogWarning(ex, "Could not open folder {Path}", InstallPath);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenRegistration()
+    {
+        if (_game.AccountRegistrationUrl is not { } url)
+        {
+            return;
+        }
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            _services.LoggerFactory.CreateLogger<GameViewModel>().LogWarning(ex, "Could not open registration page {Url}", url);
         }
     }
 

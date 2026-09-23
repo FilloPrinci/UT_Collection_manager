@@ -66,7 +66,7 @@ public sealed class AppServices : IDisposable
         var processRunner = new ProcessRunner(loggerFactory.CreateLogger<ProcessRunner>());
         var toolManager = new ToolManager(downloader, platform);
         var systemLibraryLocator = new SystemLibraryLocator(processRunner);
-        var windowsDependencyInstaller = new WindowsDependencyInstaller(downloader, loggerFactory.CreateLogger<WindowsDependencyInstaller>());
+        var windowsDependencyInstaller = new WindowsDependencyInstaller(downloader, processRunner, loggerFactory.CreateLogger<WindowsDependencyInstaller>());
         var registryPath = Path.Combine(platform.GetRootDirectory(), "installations.json");
         var registry = new InstallationRegistry(registryPath);
         var verifier = new InstallationVerifier(registry, platform);

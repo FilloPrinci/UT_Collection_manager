@@ -253,12 +253,22 @@
       },
       "dependencies": {
         "windows": {
-          "directxJune2010": { "checkFilesInSystem32": [ "xinput1_3.dll", "XAudio2_7.dll", "XAPOFX1_5.dll", "X3DAudio1_7.dll" ] },
+          "directxJune2010": {
+            "checkFilesInSystem32": [ "xinput1_3.dll", "XAudio2_7.dll", "XAPOFX1_5.dll", "X3DAudio1_7.dll" ],
+            "fileName": "directx_Jun2010_redist.exe",
+            "url": "https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe",
+            "size": 100275120,
+            "sha256": "053f76dcbb28802e23341b6a787e3b0791c0fa5c8d4d011b1044172dbf89c73b"
+          },
           "vcredist2013x64": {
             "registryKeysHKLM": [
               "SOFTWARE\\Classes\\Installer\\Dependencies\\{050d4fc8-5d48-4b8f-8972-47c82c46020f}",
               "SOFTWARE\\Classes\\Installer\\Dependencies\\{042d26ef-3dbe-4c25-95d3-4c1b11b235a7}"
             ],
+            "fileName": "vcredist_2013_x64.exe",
+            "url": "https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe",
+            "size": 7194312,
+            "sha256": "e554425243e3e8ca1cd5fe550db41e6fa58a007c74fad400274b128452f38fb8",
             "installArgs": "/install /quiet /norestart"
           }
         }

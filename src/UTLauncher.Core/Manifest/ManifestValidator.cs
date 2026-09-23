@@ -69,6 +69,16 @@ public static partial class ManifestValidator
             {
                 ValidateHash(directXWebSetup.Sha256, $"games[{game.Id}].dependencies.windows.directXWebSetup", errors, warnings);
             }
+
+            if (windowsDependencies?.DirectxJune2010 is { } directXJune2010)
+            {
+                ValidateHash(directXJune2010.Sha256, $"games[{game.Id}].dependencies.windows.directxJune2010", errors, warnings);
+            }
+
+            if (windowsDependencies?.Vcredist2013X64 is { } vcredist2013X64)
+            {
+                ValidateHash(vcredist2013X64.Sha256, $"games[{game.Id}].dependencies.windows.vcredist2013x64", errors, warnings);
+            }
         }
 
         ValidateToolEntry(manifest.Tools?.Unshield, "tools.unshield", errors, warnings);

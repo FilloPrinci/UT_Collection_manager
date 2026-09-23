@@ -118,11 +118,27 @@ public sealed record DirectXWebSetupInstaller(
     [property: JsonPropertyName("size")] long? Size,
     [property: JsonPropertyName("installArgs")] string? InstallArgs);
 
+// DirectX June 2010 offline redistributable (UT4 needs legacy components - XInput 1.3, XAudio
+// 2.7, X3DAudio 1.7, XAPOFX 1.5 - the modern web installer no longer carries). It's a
+// self-extracting archive, not a plain installer: unlike the other Windows dependencies here, it
+// needs two steps - "directx_Jun2010_redist.exe /Q /T:<dir>" to unpack, then "<dir>/DXSETUP.exe
+// /silent" to actually install - see WindowsDependencyInstaller.EnsureDirectXJune2010Async.
 public sealed record DirectXDependency(
-    [property: JsonPropertyName("checkFilesInSystem32")] IReadOnlyList<string>? CheckFilesInSystem32);
+    [property: JsonPropertyName("checkFilesInSystem32")] IReadOnlyList<string>? CheckFilesInSystem32,
+    [property: JsonPropertyName("fileName")] string? FileName,
+    [property: JsonPropertyName("url")] string? Url,
+    [property: JsonPropertyName("sha256")] string? Sha256,
+    [property: JsonPropertyName("size")] long? Size);
 
+// VC++ 2013 (VS2013/"12.0") redistributable: predates the unified "Installed"=1 registry flag
+// VcRedistInstaller checks, so presence is instead inferred from a set of per-dependency GUID
+// keys (any one missing means "not installed").
 public sealed record VcRedistDependency(
     [property: JsonPropertyName("registryKeysHKLM")] IReadOnlyList<string>? RegistryKeysHklm,
+    [property: JsonPropertyName("fileName")] string? FileName,
+    [property: JsonPropertyName("url")] string? Url,
+    [property: JsonPropertyName("sha256")] string? Sha256,
+    [property: JsonPropertyName("size")] long? Size,
     [property: JsonPropertyName("installArgs")] string? InstallArgs);
 
 public sealed record CdKeySection(

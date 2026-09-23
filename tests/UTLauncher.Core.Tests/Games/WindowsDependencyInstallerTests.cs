@@ -2,12 +2,15 @@ using Microsoft.Extensions.Logging.Abstractions;
 using UTLauncher.Core.Download;
 using UTLauncher.Core.Games;
 using UTLauncher.Core.Manifest;
+using UTLauncher.Core.Processes;
 using UTLauncher.Core.Tests.Download;
 
 namespace UTLauncher.Core.Tests.Games;
 
 public class WindowsDependencyInstallerTests
 {
+    private static ProcessRunner MakeProcessRunner() => new(NullLogger<ProcessRunner>.Instance);
+
     private static GameEntry MakeGame(WindowsDependencies dependencies) => new(
         Id: "ut99",
         Name: "Unreal Tournament (GOTY)",
@@ -39,7 +42,7 @@ public class WindowsDependencyInstallerTests
         var handler = new FakeHttpMessageHandler(_ =>
             throw new InvalidOperationException("No download should be attempted on a non-Windows platform."));
         var downloader = new Downloader(new HttpClient(handler), NullLogger<Downloader>.Instance);
-        var installer = new WindowsDependencyInstaller(downloader, NullLogger<WindowsDependencyInstaller>.Instance);
+        var installer = new WindowsDependencyInstaller(downloader, MakeProcessRunner(), NullLogger<WindowsDependencyInstaller>.Instance);
 
         var vcRedistX86 = new VcRedistInstaller(
             "SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x86", "Installed",
@@ -58,7 +61,7 @@ public class WindowsDependencyInstallerTests
         var handler = new FakeHttpMessageHandler(_ =>
             throw new InvalidOperationException("No download should be attempted without configured dependencies."));
         var downloader = new Downloader(new HttpClient(handler), NullLogger<Downloader>.Instance);
-        var installer = new WindowsDependencyInstaller(downloader, NullLogger<WindowsDependencyInstaller>.Instance);
+        var installer = new WindowsDependencyInstaller(downloader, MakeProcessRunner(), NullLogger<WindowsDependencyInstaller>.Instance);
 
         var game = new GameEntry(
             Id: "ut2004",
