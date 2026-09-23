@@ -39,7 +39,10 @@ try
         "hash" when positional.Length >= 2 => await HashCommand.RunAsync(positional[1], logger, cts.Token),
         "hash" => Fail("Usage: utlauncher hash <file|url>"),
         "install" => await InstallCommand.RunAsync(positional[1..], platform, loggingSession.Factory, cts.Token),
-        "doctor" or "verify" or "launch" or "uninstall" => NotYetImplemented(command),
+        "verify" when positional.Length >= 2 => await VerifyCommand.RunAsync(positional[1], platform, loggingSession.Factory, cts.Token),
+        "verify" => Fail("Usage: utlauncher verify <game>"),
+        "doctor" => await DoctorCommand.RunAsync(loggingSession.Factory, cts.Token),
+        "launch" or "uninstall" => NotYetImplemented(command),
         _ => Fail($"Unknown command: '{command}'."),
     };
 }

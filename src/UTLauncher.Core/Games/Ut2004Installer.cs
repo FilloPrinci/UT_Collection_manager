@@ -16,6 +16,7 @@ public sealed class Ut2004Installer(
     ArchiveExtractor archiveExtractor,
     ProcessRunner processRunner,
     ToolManager toolManager,
+    SystemLibraryLocator systemLibraryLocator,
     InstallationRegistry registry,
     IPlatform platform,
     ILogger<Ut2004Installer> logger)
@@ -374,7 +375,7 @@ public sealed class Ut2004Installer(
             return;
         }
 
-        var systemPath = await FindSystemLibraryAsync(bundledFileName, cancellationToken).ConfigureAwait(false);
+        var systemPath = await systemLibraryLocator.FindAsync(bundledFileName, cancellationToken).ConfigureAwait(false);
         if (systemPath is null)
         {
             return;
@@ -389,12 +390,12 @@ public sealed class Ut2004Installer(
 
     private async Task ApplyLibompFixAsync(string systemDirectory, CancellationToken cancellationToken)
     {
-        var systemLibompPath = await FindSystemLibraryAsync("libomp.so.5", cancellationToken).ConfigureAwait(false);
+        var systemLibompPath = await systemLibraryLocator.FindAsync("libomp.so.5", cancellationToken).ConfigureAwait(false);
         var requiresSymlink = false;
 
         if (systemLibompPath is null)
         {
-            systemLibompPath = await FindSystemLibraryAsync("libomp.so", cancellationToken).ConfigureAwait(false);
+            systemLibompPath = await systemLibraryLocator.FindAsync("libomp.so", cancellationToken).ConfigureAwait(false);
             requiresSymlink = systemLibompPath is not null;
         }
 
@@ -416,47 +417,6 @@ public sealed class Ut2004Installer(
                 File.CreateSymbolicLink(linkPath, systemLibompPath);
             }
         }
-    }
-
-    private async Task<string?> FindSystemLibraryAsync(string libraryName, CancellationToken cancellationToken)
-    {
-        ProcessResult result;
-        try
-        {
-            result = await processRunner.RunAsync("ldconfig", ["-p"], workingDirectory: null, cancellationToken)
-                .ConfigureAwait(false);
-        }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-        {
-            return null;
-        }
-
-        if (!result.Succeeded)
-        {
-            return null;
-        }
-
-        foreach (var line in result.StandardOutput.Split('\n'))
-        {
-            if (!line.Contains(libraryName, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var arrowIndex = line.IndexOf("=>", StringComparison.Ordinal);
-            if (arrowIndex < 0)
-            {
-                continue;
-            }
-
-            var path = line[(arrowIndex + 2)..].Trim();
-            if (File.Exists(path))
-            {
-                return path;
-            }
-        }
-
-        return null;
     }
 
     private static void FixMainMenuClass(string iniPath)

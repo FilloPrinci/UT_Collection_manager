@@ -3,7 +3,6 @@ using UTLauncher.Core.Download;
 using UTLauncher.Core.Extraction;
 using UTLauncher.Core.Games;
 using UTLauncher.Core.InstallRegistry;
-using UTLauncher.Core.Manifest;
 using UTLauncher.Core.Platform;
 using UTLauncher.Core.Processes;
 using UTLauncher.Core.Tools;
@@ -51,28 +50,9 @@ public static class InstallCommand
             return 1;
         }
 
-        var loader = new ManifestLoader();
-        Core.Manifest.Manifest manifest;
-        try
+        var manifest = await ManifestBootstrap.LoadValidatedAsync(logger, cancellationToken).ConfigureAwait(false);
+        if (manifest is null)
         {
-            manifest = await loader.LoadBundledAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (ManifestLoadException ex)
-        {
-            logger.LogError(ex, "Could not load the embedded manifest");
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            return 1;
-        }
-
-        var validation = ManifestValidator.Validate(manifest);
-        if (!validation.IsValid)
-        {
-            Console.Error.WriteLine("Manifest failed validation, aborting install:");
-            foreach (var error in validation.Errors)
-            {
-                Console.Error.WriteLine($"  - {error}");
-            }
-
             return 1;
         }
 
@@ -98,12 +78,14 @@ public static class InstallCommand
             if (gameId == "ut2004")
             {
                 var toolManager = new ToolManager(downloader, platform);
+                var systemLibraryLocator = new SystemLibraryLocator(processRunner);
                 var installer = new Ut2004Installer(
                     downloader,
                     isoExtractor,
                     archiveExtractor,
                     processRunner,
                     toolManager,
+                    systemLibraryLocator,
                     registry,
                     platform,
                     loggerFactory.CreateLogger<Ut2004Installer>());
