@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.Logging;
 using UTLauncher.App.Services;
 using UTLauncher.App.ViewModels;
 using UTLauncher.App.Views;
@@ -30,10 +31,13 @@ public partial class App : Application
                 startupError = $"Could not start: {ex.Message}";
             }
 
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainViewModel(services, startupError),
-            };
+            var mainWindow = new MainWindow();
+            var folderPicker = services is null
+                ? null
+                : new FolderPicker(mainWindow, services.LoggerFactory.CreateLogger<FolderPicker>());
+            var clipboardService = new ClipboardService(mainWindow);
+            mainWindow.DataContext = new MainViewModel(services, startupError, folderPicker, clipboardService);
+            desktop.MainWindow = mainWindow;
 
             if (services is not null)
             {

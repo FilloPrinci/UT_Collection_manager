@@ -11,6 +11,7 @@ namespace UTLauncher.App.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
     private readonly AppServices? _services;
+    private readonly ClipboardService? _clipboardService;
 
     public string AppVersion { get; } = GetAppVersion();
 
@@ -29,14 +30,18 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial string? StartupError { get; set; }
 
+    [ObservableProperty]
+    public partial string? CopyLogsFeedback { get; set; }
+
     /// <summary>Design-time only constructor (see MainWindow.axaml's Design.DataContext).</summary>
     public MainViewModel()
     {
     }
 
-    public MainViewModel(AppServices? services, string? startupError)
+    public MainViewModel(AppServices? services, string? startupError, FolderPicker? folderPicker, ClipboardService? clipboardService)
     {
         _services = services;
+        _clipboardService = clipboardService;
         StartupError = startupError;
 
         if (services is null)
@@ -50,7 +55,7 @@ public partial class MainViewModel : ViewModelBase
 
         foreach (var game in services.Manifest.Games)
         {
-            Games.Add(new GameViewModel(game, services));
+            Games.Add(new GameViewModel(game, services, folderPicker));
         }
 
         _ = RefreshStatusesAsync();
@@ -75,6 +80,33 @@ public partial class MainViewModel : ViewModelBase
 
     [RelayCommand]
     private void ToggleConsole() => IsConsoleVisible = !IsConsoleVisible;
+
+    [RelayCommand]
+    private async Task CopyLogsAsync()
+    {
+        if (_clipboardService is null)
+        {
+            return;
+        }
+
+        var text = string.Join('\n', LogEntries.Select(FormatLogEntry));
+        await _clipboardService.SetTextAsync(text).ConfigureAwait(true);
+
+        CopyLogsFeedback = $"Copied {LogEntries.Count} line(s) to the clipboard";
+        _ = ClearCopyLogsFeedbackAfterDelayAsync();
+    }
+
+    private async Task ClearCopyLogsFeedbackAfterDelayAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(true);
+        CopyLogsFeedback = null;
+    }
+
+    private static string FormatLogEntry(LogEntry entry)
+    {
+        var line = $"{entry.Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{entry.Level}] {entry.Message}";
+        return entry.Exception is null ? line : $"{line}\n{entry.Exception}";
+    }
 
     [RelayCommand]
     private void ToggleDoctor()

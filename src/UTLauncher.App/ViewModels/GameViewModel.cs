@@ -15,19 +15,24 @@ public partial class GameViewModel : ViewModelBase
 
     private readonly GameEntry _game;
     private readonly AppServices _services;
+    private readonly FolderPicker? _folderPicker;
     private CancellationTokenSource? _installCancellation;
 
-    public GameViewModel(GameEntry game, AppServices services)
+    public GameViewModel(GameEntry game, AppServices services, FolderPicker? folderPicker)
     {
         _game = game;
         _services = services;
-        var defaultPath = services.DefaultInstallPathFor(game.Id.ToUpperInvariant());
-        // Ut4Installer requires the destination folder to be literally named "UnrealTournament"
-        // (the game zip's own top-level folder), unlike UT99/UT2004's free-form install path.
-        InstallPath = game.Id == "ut4" ? Path.Combine(defaultPath, "UnrealTournament") : defaultPath;
+        _folderPicker = folderPicker;
+        var defaultRoot = services.DefaultInstallPathFor(game.Id.ToUpperInvariant());
+        InstallPath = Id == "ut4" ? Path.Combine(defaultRoot, SubfolderName) : defaultRoot;
         IsSupported = SupportedGameIds.Contains(game.Id);
         StatusText = IsSupported ? "Not installed" : "Not available yet";
     }
+
+    // Ut4Installer requires the destination folder to be literally named "UnrealTournament" (the
+    // game zip's own top-level folder); UT99/UT2004 accept any name, so this just keeps their
+    // folder distinguishable when several games share the same install root.
+    private string SubfolderName => Id == "ut4" ? "UnrealTournament" : Id.ToUpperInvariant();
 
     public string Id => _game.Id;
 
@@ -95,6 +100,19 @@ public partial class GameViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanInstall))]
     private async Task InstallAsync()
     {
+        if (_folderPicker is not null)
+        {
+            var chosenRoot = await _folderPicker
+                .PickFolderAsync($"Choose where to install {Name}", Path.GetDirectoryName(InstallPath))
+                .ConfigureAwait(true);
+            if (chosenRoot is null)
+            {
+                return;
+            }
+
+            InstallPath = Path.Combine(chosenRoot, SubfolderName);
+        }
+
         IsBusy = true;
         IsIndeterminate = true;
         ProgressText = "Starting...";

@@ -137,20 +137,43 @@
 
         <Border Grid.Row="2"
                 IsVisible="{Binding IsConsoleVisible}"
-                Height="220"
+                Height="260"
                 BorderThickness="0,1,0,0"
                 BorderBrush="{DynamicResource SystemBaseLowColor}">
-            <ListBox ItemsSource="{Binding LogEntries}" FontFamily="Consolas,monospace" FontSize="12">
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="logging:LogEntry">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{Binding Timestamp, StringFormat='HH:mm:ss'}" Opacity="0.6" Width="70" />
-                            <TextBlock Text="{Binding Level}" FontWeight="Bold" Width="90" />
-                            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+            <Grid RowDefinitions="Auto,*">
+                <Border Grid.Row="0"
+                        Background="{DynamicResource SystemBaseLowColor}"
+                        Padding="12,6">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Left"
+                                   Text="Console"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    Spacing="8"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="{Binding CopyLogsFeedback}"
+                                       Opacity="0.7"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding CopyLogsFeedback, Converter={x:Static conv:ObjectConverters.IsNotNull}}" />
+                            <Button Content="Copy" Command="{Binding CopyLogsCommand}" />
                         </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                    </DockPanel>
+                </Border>
+
+                <ListBox Grid.Row="1" ItemsSource="{Binding LogEntries}" FontFamily="Consolas,monospace" FontSize="12">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="logging:LogEntry">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding Timestamp, StringFormat='HH:mm:ss'}" Opacity="0.6" Width="70" />
+                                <TextBlock Text="{Binding Level}" FontWeight="Bold" Width="90" />
+                                <SelectableTextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
         </Border>
     </Grid>
 
