@@ -21,13 +21,10 @@ public sealed class Ut99Installer(
     // Ported verbatim from OldUnreal/FullGameInstallers @ 103b2b269cd9dd85b5098071aec1d80b5118877e
     // (Linux/src/entrypoints/install-ut99.sh, UNPACK_IGNORE_PATTERNS). These files are skipped when
     // extracting the original CD ISO because the patch step right after replaces them anyway.
-    private static readonly string[] UnpackIgnorePatterns =
+    private static readonly string[] CommonUnpackIgnorePatterns =
     [
         "System/UnrealTournament.ini",
         "System/User.ini",
-        "System/*.bat",
-        "System/*.dll",
-        "System/*.exe",
         "Autorun.inf",
         "Setup.exe",
         "DirectX7",
@@ -47,12 +44,19 @@ public sealed class Ut99Installer(
         "System/*.rut",
     ];
 
-    // x86_64 only for now (matches the manifest's "linux-x64" platform and OldUnreal's
+    // Only meaningful on Linux: the CD ships Windows binaries under System/, which are useless
+    // there (the real Linux binaries come from the platform patch) and would otherwise sit next
+    // to the ones actually needed. On Windows these are exactly the files the game runs.
+    private static readonly string[] WindowsBinaryPatterns = ["System/*.bat", "System/*.dll", "System/*.exe"];
+
+    // x86_64 only for now (matches the manifest's "linux-x64"/"windows" platforms and OldUnreal's
     // Linux/src/lib/architecture.sh, which resolves UE_SYSTEM_FOLDER_SUFFIX="64" and
-    // ARCHITECTURE_BINARY_SUFFIX="-amd64" for UnrealTournament on x86_64).
-    private const string SystemFolderName = "System64";
-    private const string UccBinaryName = "ucc-bin-amd64";
-    private const string GameBinaryName = "ut-bin-amd64";
+    // ARCHITECTURE_BINARY_SUFFIX="-amd64" for UnrealTournament on x86_64; Windows keeps the plain
+    // "System" folder and unsuffixed binary names, per Windows/UT_GOTY.nsi).
+    private bool IsWindows => platform.Id == "windows";
+    private string SystemFolderName => IsWindows ? "System" : "System64";
+    private string UccBinaryName => IsWindows ? "ucc.exe" : "ucc-bin-amd64";
+    private string GameBinaryName => IsWindows ? "UnrealTournament.exe" : "ut-bin-amd64";
 
     public async Task<InstallationRecord> InstallAsync(
         GameEntry game,
@@ -71,16 +75,20 @@ public sealed class Ut99Installer(
         var bonusPackResult = await DownloadSourceAsync(game, "bonusPack4", installerDirectory, progress, cancellationToken)
             .ConfigureAwait(false);
 
-        var patchFile = game.Patch?.LinuxX64
-            ?? throw new InvalidOperationException($"Manifest is missing the Linux patch for '{game.Id}'.");
+        var patchFile = (IsWindows ? game.Patch?.Windows : game.Patch?.LinuxX64)
+            ?? throw new InvalidOperationException($"Manifest is missing the {platform.Id} patch for '{game.Id}'.");
         var patchResult = await DownloadPatchAsync(patchFile, installerDirectory, progress, cancellationToken)
             .ConfigureAwait(false);
+
+        var unpackIgnorePatterns = IsWindows
+            ? CommonUnpackIgnorePatterns
+            : CommonUnpackIgnorePatterns.Concat(WindowsBinaryPatterns).ToArray();
 
         logger.LogInformation("Extracting game files from {IsoPath}", isoResult.Path);
         await isoExtractor.ExtractAsync(
             isoResult.Path,
             destination,
-            relativePath => !OldUnrealExclusionMatcher.IsExcluded(relativePath, UnpackIgnorePatterns),
+            relativePath => !OldUnrealExclusionMatcher.IsExcluded(relativePath, unpackIgnorePatterns),
             progress,
             cancellationToken).ConfigureAwait(false);
 
@@ -144,7 +152,7 @@ public sealed class Ut99Installer(
     {
         if (patchFile.FileName is null || patchFile.Url is null || patchFile.Sha256 is null)
         {
-            throw new InvalidOperationException("Manifest Linux patch entry is missing required fields.");
+            throw new InvalidOperationException("Manifest patch entry is missing required fields.");
         }
 
         var destinationPath = Path.Combine(installerDirectory, patchFile.FileName);
@@ -223,7 +231,7 @@ public sealed class Ut99Installer(
             if (!result.Succeeded || !File.Exists(decompressStagingPath))
             {
                 throw new InvalidOperationException(
-                    $"Failed to decompress map '{compressedFileName}' (ucc-bin exit code {result.ExitCode}).");
+                    $"Failed to decompress map '{compressedFileName}' ({UccBinaryName} exit code {result.ExitCode}).");
             }
 
             File.Move(decompressStagingPath, decompressTargetPath, overwrite: true);

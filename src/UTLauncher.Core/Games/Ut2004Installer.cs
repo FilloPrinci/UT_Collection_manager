@@ -73,8 +73,11 @@ public sealed class Ut2004Installer(
     // UE_SYSTEM_FOLDER_SUFFIX is empty for UT2004 on x86_64 (Linux/src/lib/architecture.sh):
     // everything lives directly under "System", and the real binary is "System/UT2004"
     // (ut2004-bin / ut2004-bin-amd64 are symlinks to it, verified against the real patch).
+    // Windows keeps the same "System" folder (Windows/UT2004.nsi).
     private const string SystemFolderName = "System";
     private const string GameBinaryName = "UT2004";
+
+    private bool IsWindows => platform.Id == "windows";
 
     public async Task<InstallationRecord> InstallAsync(
         Manifest.Manifest manifest,
@@ -97,8 +100,8 @@ public sealed class Ut2004Installer(
         var isoResult = await DownloadWithAlternativesAsync(game, "iso", installerDirectory, progress, cancellationToken)
             .ConfigureAwait(false);
 
-        var patchFile = game.Patch?.LinuxX64
-            ?? throw new InvalidOperationException($"Manifest is missing the Linux patch for '{game.Id}'.");
+        var patchFile = (IsWindows ? game.Patch?.Windows : game.Patch?.LinuxX64)
+            ?? throw new InvalidOperationException($"Manifest is missing the {platform.Id} patch for '{game.Id}'.");
         var patchResult = await DownloadPatchAsync(patchFile, installerDirectory, progress, cancellationToken)
             .ConfigureAwait(false);
 
@@ -114,7 +117,7 @@ public sealed class Ut2004Installer(
             .ConfigureAwait(false);
 
         logger.LogInformation("Installing extracted files to {Destination}", destination);
-        InstallExtractedFiles(dataDirectory, destination);
+        InstallExtractedFiles(dataDirectory, destination, IsWindows);
         Directory.Delete(stagingDirectory, recursive: true);
 
         logger.LogInformation("Extracting patch {PatchTag} from {PatchPath}", game.Patch?.Tag, patchResult.Path);
@@ -191,7 +194,7 @@ public sealed class Ut2004Installer(
     {
         if (patchFile.FileName is null || patchFile.Url is null || patchFile.Sha256 is null)
         {
-            throw new InvalidOperationException("Manifest Linux patch entry is missing required fields.");
+            throw new InvalidOperationException("Manifest patch entry is missing required fields.");
         }
 
         var destinationPath = Path.Combine(installerDirectory, patchFile.FileName);
@@ -256,15 +259,19 @@ public sealed class Ut2004Installer(
         return dataDirectory;
     }
 
-    private static void InstallExtractedFiles(string dataDirectory, string destination)
+    private static void InstallExtractedFiles(string dataDirectory, string destination, bool isWindows)
     {
         // Windows-only content that isn't needed on Linux (the real Linux binary comes from
-        // the patch, extracted separately).
-        DeleteFilesWithExtension(Path.Combine(dataDirectory, "All_UT2004.EXE"), ".exe");
-        var soundsSystemDirectory = Path.Combine(dataDirectory, "English_Sounds_Speech_System_Help", "System");
-        DeleteFilesWithExtension(soundsSystemDirectory, ".bat");
-        DeleteFilesWithExtension(soundsSystemDirectory, ".dll");
-        DeleteFilesWithExtension(soundsSystemDirectory, ".exe");
+        // the patch, extracted separately). On Windows these are exactly the files the game runs,
+        // so they must be kept.
+        if (!isWindows)
+        {
+            DeleteFilesWithExtension(Path.Combine(dataDirectory, "All_UT2004.EXE"), ".exe");
+            var soundsSystemDirectory = Path.Combine(dataDirectory, "English_Sounds_Speech_System_Help", "System");
+            DeleteFilesWithExtension(soundsSystemDirectory, ".bat");
+            DeleteFilesWithExtension(soundsSystemDirectory, ".dll");
+            DeleteFilesWithExtension(soundsSystemDirectory, ".exe");
+        }
 
         foreach (var (source, target) in FoldersAndTargets)
         {
