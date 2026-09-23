@@ -240,7 +240,7 @@ public sealed class Ut2004Installer(
 
         var result = await processRunner.RunAsync(
             unshieldPath,
-            ["-d", ToUnshieldPath(dataDirectory), "x", ToUnshieldPath(mainCabPath)],
+            ["-d", dataDirectory, "x", ToUnshieldPath(mainCabPath)],
             workingDirectory: null,
             cancellationToken).ConfigureAwait(false);
 
@@ -264,13 +264,20 @@ public sealed class Ut2004Installer(
     }
 
     // unshield's Windows/MinGW build derives each cabinet's sibling filename (data1.hdr,
-    // data2.cab, ...) by locating the last path separator in the given path and only checks for
-    // '/', not '\' (see twogood/unshield#37, confirmed and fixed on their end by using forward
-    // slashes). Without this, a '\'-only path containing a digit anywhere - e.g. the "2004" in
-    // "...\UT2004\...\Cabs\data1.cab" - makes it truncate at that digit instead, look for the
-    // wrong file, and fail with "Failed to open ... as an InstallShield Cabinet File". Windows'
-    // own file APIs accept '/' identically to '\', so this sidesteps the bug outright; Linux
-    // paths already use '/' natively, making this a no-op there.
+    // data2.cab, ...) by locating the last path separator in the *cabinet file path* argument and
+    // only checks for '/', not '\' (see twogood/unshield#37, confirmed and fixed on their end by
+    // using forward slashes there). Without this, a '\'-only path containing a digit anywhere -
+    // e.g. the "2004" in "...\UT2004\...\Cabs\data1.cab" - makes it truncate at that digit
+    // instead, look for the wrong file, and fail with "Failed to open ... as an InstallShield
+    // Cabinet File". Windows' own file APIs accept '/' identically to '\', so this sidesteps the
+    // bug outright; Linux paths already use '/' natively, making this a no-op there.
+    //
+    // The *destination* directory ("-d") must stay '\'-separated: forward-slashing it too (as an
+    // earlier version of this code did) made unshield fail to create the cabinet's own
+    // subdirectories under it ("Failed to create directory ..."), even though '/' alone is
+    // exactly what fixes the cabinet file argument above. This matches OldUnreal's own NSIS
+    // installer exactly (Windows/Common.nsh: `-d "$INSTDIR\...\data" x "$0/.../data1.cab"` - '\'
+    // for -d, '/' for the cabinet path), which is the proven-working reference here.
     private static string ToUnshieldPath(string path) => path.Replace('\\', '/');
 
     private static void InstallExtractedFiles(string dataDirectory, string destination, bool isWindows)
