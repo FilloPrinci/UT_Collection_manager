@@ -17,7 +17,14 @@ public static class OldUnrealExclusionMatcher
 
         if (!normalizedPattern.Contains('/'))
         {
-            // A bare root-level name matches that entry itself, or (if it is a directory)
+            if (normalizedPattern.Contains('*'))
+            {
+                // A bare wildcard (e.g. UT2004's "*.*") is anchored to the root: 7z's -x! is
+                // non-recursive, so it only matches entries with no directory component at all.
+                return !normalizedPath.Contains('/') && MatchesFileName(normalizedPath, normalizedPattern);
+            }
+
+            // A bare literal name matches that entry itself, or (if it is a directory)
             // everything underneath it - mirroring how 7z's -x! excludes whole directories.
             return normalizedPath.Equals(normalizedPattern, StringComparison.OrdinalIgnoreCase) ||
                 normalizedPath.StartsWith(normalizedPattern + "/", StringComparison.OrdinalIgnoreCase);
@@ -46,8 +53,19 @@ public static class OldUnrealExclusionMatcher
             return fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase);
         }
 
-        // Every wildcard pattern in the OldUnreal scripts is of the form "*.ext".
-        var extension = pattern[(pattern.LastIndexOf('*') + 1)..];
-        return fileName.EndsWith(extension, StringComparison.OrdinalIgnoreCase);
+        if (pattern == "*.*")
+        {
+            return fileName.Contains('.');
+        }
+
+        // Every other wildcard pattern in the OldUnreal scripts has exactly one "*", either as
+        // a prefix ("*.ext") or a suffix ("Setup.*").
+        var wildcardIndex = pattern.IndexOf('*');
+        var prefix = pattern[..wildcardIndex];
+        var suffix = pattern[(wildcardIndex + 1)..];
+
+        return fileName.Length >= prefix.Length + suffix.Length &&
+            fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+            fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase);
     }
 }

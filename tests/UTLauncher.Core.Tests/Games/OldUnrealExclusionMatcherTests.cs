@@ -79,4 +79,48 @@ public class OldUnrealExclusionMatcherTests
     {
         Assert.True(OldUnrealExclusionMatcher.IsExcluded("system/unrealtournament.INI", Ut99UnpackIgnorePatterns));
     }
+
+    private static readonly string[] Ut2004UnpackIgnorePatterns =
+    [
+        "AutoRunData",
+        "Disk1/layout.bin",
+        "Disk1/Setup.*",
+        "Disk1/setup.*",
+        "SoNow",
+        "*.*",
+    ];
+
+    [Theory]
+    [InlineData("AutoRun.exe")]
+    [InlineData("Autorun.inf")]
+    [InlineData("Manual.pdf")]
+    [InlineData("AutoRunData/bg.tga")]
+    [InlineData("Disk1/layout.bin")]
+    [InlineData("Disk1/Setup.bmp")]
+    [InlineData("Disk1/setup.exe")]
+    [InlineData("Disk1/setup.ini")]
+    public void IsExcluded_ReturnsTrue_ForKnownUt2004IgnoredEntries(string relativePath)
+    {
+        Assert.True(OldUnrealExclusionMatcher.IsExcluded(relativePath, Ut2004UnpackIgnorePatterns));
+    }
+
+    [Theory]
+    [InlineData("Disk1/data1.cab")]
+    [InlineData("Disk1/data1.hdr")]
+    [InlineData("Disk1/data2.cab")]
+    [InlineData("Disk1/engine32.cab")]
+    [InlineData("Disk2/data3.cab")]
+    [InlineData("Disk5/data6.cab")]
+    public void IsExcluded_ReturnsFalse_ForUt2004CabFiles(string relativePath)
+    {
+        Assert.False(OldUnrealExclusionMatcher.IsExcluded(relativePath, Ut2004UnpackIgnorePatterns));
+    }
+
+    [Fact]
+    public void IsExcluded_RootWildcard_DoesNotMatchNestedFiles()
+    {
+        // "*.*" is a bare (non-recursive) pattern: it must only apply at the archive root,
+        // not to files with a dot living inside subdirectories like Disk1/data1.cab.
+        Assert.False(OldUnrealExclusionMatcher.IsExcluded("Disk1/data1.cab", Ut2004UnpackIgnorePatterns));
+    }
 }

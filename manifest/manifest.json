@@ -5,9 +5,17 @@
 
   "tools": {
     "unshield": {
-      "notes": "For UT2004's InstallShield .cab files. OldUnreal provides ready-made binaries in the FullGameInstallers repo. TODO: URLs pinned to a commit + SHA-256.",
-      "windows": { "url": "TODO", "sha256": "TODO", "exe": "unshield.exe" },
-      "linux":   { "url": "TODO", "sha256": "TODO", "exe": "unshield" }
+      "notes": "For UT2004's InstallShield .cab files. Prebuilt binaries checked into OldUnreal/FullGameInstallers, pinned to the same commit as the UT99/UT2004 reference scripts (unshield 1.6.2, MIT license).",
+      "windows": {
+        "url": "https://raw.githubusercontent.com/OldUnreal/FullGameInstallers/103b2b269cd9dd85b5098071aec1d80b5118877e/Windows/Installer/tools/unshield.exe",
+        "sha256": "fa1a61593b0eb8af89a6f04e7018de58a7bbedac6e806276e9bc8d45f705bf99",
+        "exe": "unshield.exe"
+      },
+      "linux": {
+        "url": "https://raw.githubusercontent.com/OldUnreal/FullGameInstallers/103b2b269cd9dd85b5098071aec1d80b5118877e/Linux/deps/unshield-amd64",
+        "sha256": "2c790958037538fd9dd31f41eebc2a0e0e6343ac8e4a1805b0176400b1d68332",
+        "exe": "unshield"
+      }
     },
     "umu": {
       "notes": "Linux only, UT4 only. Portable version (zipapp) from umu-launcher releases. TODO: version + SHA-256.",

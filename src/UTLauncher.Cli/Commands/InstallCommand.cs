@@ -6,11 +6,14 @@ using UTLauncher.Core.InstallRegistry;
 using UTLauncher.Core.Manifest;
 using UTLauncher.Core.Platform;
 using UTLauncher.Core.Processes;
+using UTLauncher.Core.Tools;
 
 namespace UTLauncher.Cli.Commands;
 
 public static class InstallCommand
 {
+    private static readonly HashSet<string> SupportedGameIds = ["ut99", "ut2004"];
+
     public static async Task<int> RunAsync(
         IReadOnlyList<string> args,
         IPlatform platform,
@@ -42,7 +45,7 @@ public static class InstallCommand
             return 1;
         }
 
-        if (gameId != "ut99")
+        if (!SupportedGameIds.Contains(gameId))
         {
             Console.Error.WriteLine($"Install for '{gameId}' is not implemented yet (coming in a later step of the plan).");
             return 1;
@@ -87,27 +90,45 @@ public static class InstallCommand
         var processRunner = new ProcessRunner(loggerFactory.CreateLogger<ProcessRunner>());
         var registryPath = Path.Combine(platform.GetRootDirectory(), "installations.json");
         var registry = new InstallationRegistry(registryPath);
-        var installer = new Ut99Installer(
-            downloader,
-            isoExtractor,
-            archiveExtractor,
-            processRunner,
-            registry,
-            platform,
-            loggerFactory.CreateLogger<Ut99Installer>());
-
         var progress = new ConsoleProgressReporter();
 
         try
         {
-            var record = await installer.InstallAsync(game, destination, progress, cancellationToken)
-                .ConfigureAwait(false);
+            InstallationRecord record;
+            if (gameId == "ut2004")
+            {
+                var toolManager = new ToolManager(downloader, platform);
+                var installer = new Ut2004Installer(
+                    downloader,
+                    isoExtractor,
+                    archiveExtractor,
+                    processRunner,
+                    toolManager,
+                    registry,
+                    platform,
+                    loggerFactory.CreateLogger<Ut2004Installer>());
+                record = await installer.InstallAsync(manifest, game, destination, progress, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            else
+            {
+                var installer = new Ut99Installer(
+                    downloader,
+                    isoExtractor,
+                    archiveExtractor,
+                    processRunner,
+                    registry,
+                    platform,
+                    loggerFactory.CreateLogger<Ut99Installer>());
+                record = await installer.InstallAsync(game, destination, progress, cancellationToken)
+                    .ConfigureAwait(false);
+            }
 
             Console.WriteLine();
             Console.WriteLine($"Installed {game.Name} ({record.VersionCode}) to {record.InstallPath}");
             return 0;
         }
-        catch (Exception ex) when (ex is DownloadException or InvalidOperationException)
+        catch (Exception ex) when (ex is DownloadException or InvalidOperationException or ToolNotConfiguredException)
         {
             logger.LogError(ex, "Installation of {GameId} failed", gameId);
             Console.Error.WriteLine();
