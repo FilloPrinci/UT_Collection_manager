@@ -148,4 +148,57 @@ public class ManifestValidatorTests
         Assert.True(result.IsValid);
         Assert.Contains(result.Warnings, w => w.Contains("extraFiles[zlib.dll]"));
     }
+
+    private static GameEntry MakeGameWithWindowsDependencies(WindowsDependencies dependencies) => new(
+        Id: "ut99",
+        Name: "Unreal Tournament (GOTY)",
+        VersionCode: "v1",
+        Reference: null,
+        Sources: new Dictionary<string, SourceFile>(),
+        Patch: null,
+        Launch: null,
+        Network: null,
+        DiskSpaceRequiredBytes: null,
+        MasterServer: null,
+        Ut4uuInstallInfo: null,
+        AccountRegistrationUrl: null,
+        Dependencies: new DependenciesSection(dependencies),
+        CdKey: null);
+
+    [Fact]
+    public void Validate_ReportsError_ForWindowsDependencyWithMalformedHash()
+    {
+        var vcRedistX86 = new VcRedistInstaller(null, null, "vc_redist.x86.exe", "https://example.com/vc_redist.x86.exe", "bad-hash", null, null);
+        var dependencies = new WindowsDependencies(null, null, vcRedistX86, null, null);
+        var manifest = MakeManifest(MakeGameWithWindowsDependencies(dependencies));
+
+        var result = ManifestValidator.Validate(manifest);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.Contains("dependencies.windows.vcRedistX86") && e.Contains("invalid sha256"));
+    }
+
+    [Fact]
+    public void Validate_ReportsWarning_NotError_ForWindowsDependencyWithTodoHash()
+    {
+        var directXWebSetup = new DirectXWebSetupInstaller("dxwebsetup.exe", "https://example.com/dxwebsetup.exe", "TODO", null, null);
+        var dependencies = new WindowsDependencies(null, null, null, null, directXWebSetup);
+        var manifest = MakeManifest(MakeGameWithWindowsDependencies(dependencies));
+
+        var result = ManifestValidator.Validate(manifest);
+
+        Assert.True(result.IsValid);
+        Assert.Contains(result.Warnings, w => w.Contains("dependencies.windows.directXWebSetup"));
+    }
+
+    [Fact]
+    public void Validate_DoesNotWarn_WhenGameHasNoWindowsDependenciesConfigured()
+    {
+        var manifest = MakeManifest(MakeGame("ut99"));
+
+        var result = ManifestValidator.Validate(manifest);
+
+        Assert.True(result.IsValid);
+        Assert.DoesNotContain(result.Warnings, w => w.Contains("dependencies.windows"));
+    }
 }

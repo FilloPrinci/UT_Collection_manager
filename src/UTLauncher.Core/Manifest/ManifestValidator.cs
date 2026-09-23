@@ -53,6 +53,22 @@ public static partial class ManifestValidator
 
             ValidatePatchPlatform(game.Patch?.Windows, $"games[{game.Id}].patch.windows", errors, warnings);
             ValidatePatchPlatform(game.Patch?.LinuxX64, $"games[{game.Id}].patch.linux-x64", errors, warnings);
+
+            var windowsDependencies = game.Dependencies?.Windows;
+            if (windowsDependencies?.VcRedistX86 is { } vcRedistX86)
+            {
+                ValidateHash(vcRedistX86.Sha256, $"games[{game.Id}].dependencies.windows.vcRedistX86", errors, warnings);
+            }
+
+            if (windowsDependencies?.VcRedistX64 is { } vcRedistX64)
+            {
+                ValidateHash(vcRedistX64.Sha256, $"games[{game.Id}].dependencies.windows.vcRedistX64", errors, warnings);
+            }
+
+            if (windowsDependencies?.DirectXWebSetup is { } directXWebSetup)
+            {
+                ValidateHash(directXWebSetup.Sha256, $"games[{game.Id}].dependencies.windows.directXWebSetup", errors, warnings);
+            }
         }
 
         ValidateToolEntry(manifest.Tools?.Unshield, "tools.unshield", errors, warnings);

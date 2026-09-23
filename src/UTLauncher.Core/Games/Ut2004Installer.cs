@@ -17,6 +17,7 @@ public sealed class Ut2004Installer(
     ProcessRunner processRunner,
     ToolManager toolManager,
     SystemLibraryLocator systemLibraryLocator,
+    WindowsDependencyInstaller windowsDependencyInstaller,
     InstallationRegistry registry,
     IPlatform platform,
     ILogger<Ut2004Installer> logger)
@@ -128,6 +129,9 @@ public sealed class Ut2004Installer(
         RemoveWrongCaseFiles(destination);
         await ApplyLibraryPreferenceFixesAsync(destination, cancellationToken).ConfigureAwait(false);
         FixMainMenuClass(Path.Combine(destination, SystemFolderName, "UT2004.ini"));
+
+        await windowsDependencyInstaller.EnsureInstalledAsync(game, installerDirectory, progress, cancellationToken)
+            .ConfigureAwait(false);
 
         var record = new InstallationRecord(
             GameId: game.Id,

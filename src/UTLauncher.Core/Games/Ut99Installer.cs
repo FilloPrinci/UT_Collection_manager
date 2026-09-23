@@ -14,6 +14,7 @@ public sealed class Ut99Installer(
     Iso9660Extractor isoExtractor,
     ArchiveExtractor archiveExtractor,
     ProcessRunner processRunner,
+    WindowsDependencyInstaller windowsDependencyInstaller,
     InstallationRegistry registry,
     IPlatform platform,
     ILogger<Ut99Installer> logger)
@@ -105,6 +106,9 @@ public sealed class Ut99Installer(
         await UnpackCompressedMapsAsync(destination, progress, cancellationToken).ConfigureAwait(false);
 
         ApplySpecialFixes(destination);
+
+        await windowsDependencyInstaller.EnsureInstalledAsync(game, installerDirectory, progress, cancellationToken)
+            .ConfigureAwait(false);
 
         var record = new InstallationRecord(
             GameId: game.Id,

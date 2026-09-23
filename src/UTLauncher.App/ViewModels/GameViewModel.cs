@@ -137,6 +137,7 @@ public partial class GameViewModel : ViewModelBase
                 _services.ProcessRunner,
                 _services.ToolManager,
                 _services.SystemLibraryLocator,
+                _services.WindowsDependencyInstaller,
                 _services.Registry,
                 _services.Platform,
                 _services.LoggerFactory.CreateLogger<Ut2004Installer>());
@@ -148,6 +149,7 @@ public partial class GameViewModel : ViewModelBase
             _services.IsoExtractor,
             _services.ArchiveExtractor,
             _services.ProcessRunner,
+            _services.WindowsDependencyInstaller,
             _services.Registry,
             _services.Platform,
             _services.LoggerFactory.CreateLogger<Ut99Installer>());

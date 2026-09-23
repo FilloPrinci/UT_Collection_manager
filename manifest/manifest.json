@@ -83,6 +83,36 @@
         "windows": { "exe": "System/UnrealTournament.exe", "args": "" },
         "linux-x64": { "exe": "System64/ut-bin", "args": "" }
       },
+      "dependencies": {
+        "windows": {
+          "notes": "Ported from Windows/Common.nsh (Visual C++ Redistributable x86/x64, DirectX End-User Runtime). VC redist URLs are Microsoft's own content-addressed CDN paths (the hex segment is the file's own SHA-256), so they are stable to pin directly.",
+          "vcRedistX86": {
+            "registryKeyHKLM": "SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x86",
+            "registryValueName": "Installed",
+            "fileName": "vc_redist.x86.exe",
+            "url": "https://download.visualstudio.microsoft.com/download/pr/bd1c8d9d-ba95-4eee-bc6e-df1fcc876373/0C09F2611660441084CE0DF425C51C11E147E6447963C3690F97E0B25C55ED64/VC_redist.x86.exe",
+            "size": 13953392,
+            "sha256": "0c09f2611660441084ce0df425c51c11e147e6447963c3690f97e0b25c55ed64",
+            "installArgs": "/install /passive /norestart"
+          },
+          "vcRedistX64": {
+            "registryKeyHKLM": "SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64",
+            "registryValueName": "Installed",
+            "fileName": "vc_redist.x64.exe",
+            "url": "https://download.visualstudio.microsoft.com/download/pr/bd1c8d9d-ba95-4eee-bc6e-df1fcc876373/CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B/VC_redist.x64.exe",
+            "size": 25635768,
+            "sha256": "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b",
+            "installArgs": "/install /passive /norestart"
+          },
+          "directXWebSetup": {
+            "fileName": "dxwebsetup.exe",
+            "url": "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe",
+            "size": 295320,
+            "sha256": "2cf71d098c608c56e07f4655855a886c3102553f648df88458df616b26fd612f",
+            "installArgs": "/q"
+          }
+        }
+      },
       "network": { "defaultPortUdp": 7777 }
     },
 
@@ -131,6 +161,36 @@
       "launch": {
         "windows": { "exe": "System/UT2004.exe", "args": "", "notes": "TODO: verify the exact name after the patch (possibly System64)" },
         "linux-x64": { "exe": "System/ut2004-bin-amd64", "args": "", "notes": "Alternatively, the System/UT2004 script" }
+      },
+      "dependencies": {
+        "windows": {
+          "notes": "Same VC++/DirectX dependencies as ut99 (shared Windows/Common.nsh macro).",
+          "vcRedistX86": {
+            "registryKeyHKLM": "SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x86",
+            "registryValueName": "Installed",
+            "fileName": "vc_redist.x86.exe",
+            "url": "https://download.visualstudio.microsoft.com/download/pr/bd1c8d9d-ba95-4eee-bc6e-df1fcc876373/0C09F2611660441084CE0DF425C51C11E147E6447963C3690F97E0B25C55ED64/VC_redist.x86.exe",
+            "size": 13953392,
+            "sha256": "0c09f2611660441084ce0df425c51c11e147e6447963c3690f97e0b25c55ed64",
+            "installArgs": "/install /passive /norestart"
+          },
+          "vcRedistX64": {
+            "registryKeyHKLM": "SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64",
+            "registryValueName": "Installed",
+            "fileName": "vc_redist.x64.exe",
+            "url": "https://download.visualstudio.microsoft.com/download/pr/bd1c8d9d-ba95-4eee-bc6e-df1fcc876373/CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B/VC_redist.x64.exe",
+            "size": 25635768,
+            "sha256": "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b",
+            "installArgs": "/install /passive /norestart"
+          },
+          "directXWebSetup": {
+            "fileName": "dxwebsetup.exe",
+            "url": "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe",
+            "size": 295320,
+            "sha256": "2cf71d098c608c56e07f4655855a886c3102553f648df88458df616b26fd612f",
+            "installArgs": "/q"
+          }
+        }
       },
       "cdKey": { "required": false, "notes": "To be verified in testing. If needed, an optional field in settings, never in the manifest." },
       "network": { "defaultPortUdp": 7777 }

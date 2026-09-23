@@ -92,7 +92,31 @@ public sealed record DependenciesSection(
 
 public sealed record WindowsDependencies(
     [property: JsonPropertyName("directxJune2010")] DirectXDependency? DirectxJune2010,
-    [property: JsonPropertyName("vcredist2013x64")] VcRedistDependency? Vcredist2013X64);
+    [property: JsonPropertyName("vcredist2013x64")] VcRedistDependency? Vcredist2013X64,
+    [property: JsonPropertyName("vcRedistX86")] VcRedistInstaller? VcRedistX86,
+    [property: JsonPropertyName("vcRedistX64")] VcRedistInstaller? VcRedistX64,
+    [property: JsonPropertyName("directXWebSetup")] DirectXWebSetupInstaller? DirectXWebSetup,
+    [property: JsonPropertyName("notes")] string? Notes = null);
+
+// VC++ 14.x (VS2015-2022) redistributable: OldUnreal's Windows/Common.nsh checks a single
+// "Installed"=1 DWORD under a per-architecture registry key before running the installer.
+public sealed record VcRedistInstaller(
+    [property: JsonPropertyName("registryKeyHKLM")] string? RegistryKeyHklm,
+    [property: JsonPropertyName("registryValueName")] string? RegistryValueName,
+    [property: JsonPropertyName("fileName")] string? FileName,
+    [property: JsonPropertyName("url")] string? Url,
+    [property: JsonPropertyName("sha256")] string? Sha256,
+    [property: JsonPropertyName("size")] long? Size,
+    [property: JsonPropertyName("installArgs")] string? InstallArgs);
+
+// DirectX End-User Runtime web installer: OldUnreal's script has no presence check, it just runs
+// dxwebsetup.exe /q unconditionally every time (a fast no-op when nothing needs updating).
+public sealed record DirectXWebSetupInstaller(
+    [property: JsonPropertyName("fileName")] string? FileName,
+    [property: JsonPropertyName("url")] string? Url,
+    [property: JsonPropertyName("sha256")] string? Sha256,
+    [property: JsonPropertyName("size")] long? Size,
+    [property: JsonPropertyName("installArgs")] string? InstallArgs);
 
 public sealed record DirectXDependency(
     [property: JsonPropertyName("checkFilesInSystem32")] IReadOnlyList<string>? CheckFilesInSystem32);

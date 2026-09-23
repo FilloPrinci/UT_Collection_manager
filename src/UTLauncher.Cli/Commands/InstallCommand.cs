@@ -70,6 +70,7 @@ public static class InstallCommand
         var processRunner = new ProcessRunner(loggerFactory.CreateLogger<ProcessRunner>());
         var registryPath = Path.Combine(platform.GetRootDirectory(), "installations.json");
         var registry = new InstallationRegistry(registryPath);
+        var windowsDependencyInstaller = new WindowsDependencyInstaller(downloader, loggerFactory.CreateLogger<WindowsDependencyInstaller>());
         var progress = new ConsoleProgressReporter();
 
         try
@@ -86,6 +87,7 @@ public static class InstallCommand
                     processRunner,
                     toolManager,
                     systemLibraryLocator,
+                    windowsDependencyInstaller,
                     registry,
                     platform,
                     loggerFactory.CreateLogger<Ut2004Installer>());
@@ -99,6 +101,7 @@ public static class InstallCommand
                     isoExtractor,
                     archiveExtractor,
                     processRunner,
+                    windowsDependencyInstaller,
                     registry,
                     platform,
                     loggerFactory.CreateLogger<Ut99Installer>());
