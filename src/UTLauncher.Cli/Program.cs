@@ -38,7 +38,8 @@ try
         "list" => await ListCommand.RunAsync(logger, cts.Token),
         "hash" when positional.Length >= 2 => await HashCommand.RunAsync(positional[1], logger, cts.Token),
         "hash" => Fail("Usage: utlauncher hash <file|url>"),
-        "doctor" or "install" or "verify" or "launch" or "uninstall" => NotYetImplemented(command),
+        "install" => await InstallCommand.RunAsync(positional[1..], platform, loggingSession.Factory, cts.Token),
+        "doctor" or "verify" or "launch" or "uninstall" => NotYetImplemented(command),
         _ => Fail($"Unknown command: '{command}'."),
     };
 }

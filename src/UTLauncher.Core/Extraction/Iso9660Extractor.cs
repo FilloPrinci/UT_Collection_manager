@@ -17,11 +17,14 @@ public sealed class Iso9660Extractor
         await using var isoStream = File.OpenRead(isoPath);
         using var reader = new CDReader(isoStream, joliet: true);
 
-        // GetFiles(path) with no pattern/SearchOption is the only overload that reliably
-        // recurses the whole Joliet tree in DiscUtils.Iso9660; the pattern-based overloads
-        // return nothing for this reader. Entries come back as e.g. "\sub/nested.txt;1"
-        // (leading backslash, internal forward slashes, trailing ISO9660 version suffix).
-        var rawEntries = reader.GetFiles(@"\");
+        // DiscUtils.Iso9660's GetFiles(path, pattern, SearchOption.AllDirectories) returns
+        // nothing on real-world discs, and even the single-argument GetFiles(path) overload -
+        // despite recursing correctly on ISOs built with CDBuilder in tests - only returns the
+        // root-level entries on an actual commercially mastered ISO (verified against the real
+        // UT_GOTY_CD1.iso, where it silently dropped 794 of 796 files). Walking the directory
+        // tree manually via GetDirectories/GetFiles per level is the only approach that reliably
+        // sees every file on both synthetic and real discs.
+        var rawEntries = WalkFiles(reader, @"\");
         var entries = rawEntries
             .Select(raw => (Raw: raw, RelativePath: ToRelativePath(raw)))
             .Where(e => shouldExtract is null || shouldExtract(e.RelativePath))
@@ -48,6 +51,17 @@ public sealed class Iso9660Extractor
 
             progress?.Report(TaskProgress.Determinate($"Extracting {fileName}", i + 1, entries.Count));
         }
+    }
+
+    private static List<string> WalkFiles(CDReader reader, string directory)
+    {
+        var files = new List<string>(reader.GetFiles(directory));
+        foreach (var subdirectory in reader.GetDirectories(directory))
+        {
+            files.AddRange(WalkFiles(reader, subdirectory));
+        }
+
+        return files;
     }
 
     private static string ToRelativePath(string isoPath)

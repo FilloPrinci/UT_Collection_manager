@@ -32,6 +32,19 @@ public sealed class ArchiveExtractor
     private static bool IsStreamedTarArchive(string path) =>
         StreamedTarExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
 
+    // Tar archives (the Linux patches) can contain symlinks (e.g. System64/ut-bin -> ut-bin-amd64).
+    // SharpCompress only recreates them on disk if a SymbolicLinkHandler is supplied; without one
+    // the entry is silently skipped and the link never appears on disk.
+    private static void CreateSymbolicLink(string destinationPath, string linkTarget)
+    {
+        if (File.Exists(destinationPath) || new FileInfo(destinationPath).LinkTarget is not null)
+        {
+            File.Delete(destinationPath);
+        }
+
+        File.CreateSymbolicLink(destinationPath, linkTarget);
+    }
+
     private static async Task ExtractWithArchiveAsync(
         string archivePath,
         string destinationDirectory,
@@ -39,7 +52,12 @@ public sealed class ArchiveExtractor
         CancellationToken cancellationToken)
     {
         var fileName = Path.GetFileName(archivePath);
-        var extractionOptions = new ExtractionOptions { Overwrite = true, ExtractFullPath = true };
+        var extractionOptions = new ExtractionOptions
+        {
+            Overwrite = true,
+            ExtractFullPath = true,
+            SymbolicLinkHandler = CreateSymbolicLink,
+        };
 
         await using var stream = File.OpenRead(archivePath);
         using var archive = ArchiveFactory.OpenArchive(stream, new ReaderOptions());
@@ -69,7 +87,12 @@ public sealed class ArchiveExtractor
         CancellationToken cancellationToken)
     {
         var fileName = Path.GetFileName(archivePath);
-        var extractionOptions = new ExtractionOptions { Overwrite = true, ExtractFullPath = true };
+        var extractionOptions = new ExtractionOptions
+        {
+            Overwrite = true,
+            ExtractFullPath = true,
+            SymbolicLinkHandler = CreateSymbolicLink,
+        };
 
         await using var stream = File.OpenRead(archivePath);
         await using var reader = await ReaderFactory.OpenAsyncReader(stream, new ReaderOptions(), cancellationToken)
