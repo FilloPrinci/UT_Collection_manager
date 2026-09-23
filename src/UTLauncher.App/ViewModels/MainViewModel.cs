@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Reflection;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -10,6 +11,8 @@ namespace UTLauncher.App.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
     private readonly AppServices? _services;
+
+    public string AppVersion { get; } = GetAppVersion();
 
     public ObservableCollection<GameViewModel> Games { get; } = [];
 
@@ -81,5 +84,22 @@ public partial class MainViewModel : ViewModelBase
         {
             Doctor.RunCommand.Execute(null);
         }
+    }
+
+    // <Version> is set from the pushed git tag by the release workflow; local/dev builds fall
+    // back to the csproj default ("0.0.0-dev"). Trims off the "+<git-sha>" a deterministic build
+    // can append to InformationalVersion, so the UI shows a plain "v0.1.4".
+    private static string GetAppVersion()
+    {
+        var informational = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (string.IsNullOrEmpty(informational))
+        {
+            return "dev";
+        }
+
+        var plusIndex = informational.IndexOf('+');
+        var version = plusIndex >= 0 ? informational[..plusIndex] : informational;
+        return $"v{version}";
     }
 }
