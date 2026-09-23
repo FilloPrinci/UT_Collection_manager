@@ -48,7 +48,7 @@ public class ManifestValidatorTests
         var result = ManifestValidator.Validate(manifest);
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.Contains("sha256 non valido"));
+        Assert.Contains(result.Errors, e => e.Contains("invalid sha256"));
     }
 
     [Theory]
@@ -74,7 +74,7 @@ public class ManifestValidatorTests
         var result = ManifestValidator.Validate(manifest);
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.Contains("duplicato"));
+        Assert.Contains(result.Errors, e => e.Contains("Duplicate"));
     }
 
     [Fact]

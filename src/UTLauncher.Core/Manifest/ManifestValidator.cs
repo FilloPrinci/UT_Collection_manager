@@ -14,12 +14,12 @@ public static partial class ManifestValidator
 
         if (manifest.ManifestVersion < 1)
         {
-            errors.Add("manifestVersion deve essere >= 1.");
+            errors.Add("manifestVersion must be >= 1.");
         }
 
         if (manifest.Games.Count == 0)
         {
-            errors.Add("Il manifest non contiene giochi.");
+            errors.Add("The manifest does not contain any games.");
         }
 
         var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -27,23 +27,23 @@ public static partial class ManifestValidator
         {
             if (string.IsNullOrWhiteSpace(game.Id))
             {
-                errors.Add("Trovato un gioco con id mancante o vuoto.");
+                errors.Add("Found a game with a missing or empty id.");
                 continue;
             }
 
             if (!seenIds.Add(game.Id))
             {
-                errors.Add($"Id gioco duplicato: '{game.Id}'.");
+                errors.Add($"Duplicate game id: '{game.Id}'.");
             }
 
             if (string.IsNullOrWhiteSpace(game.Name))
             {
-                errors.Add($"games[{game.Id}]: name mancante.");
+                errors.Add($"games[{game.Id}]: missing name.");
             }
 
             if (string.IsNullOrWhiteSpace(game.VersionCode))
             {
-                errors.Add($"games[{game.Id}]: versionCode mancante.");
+                errors.Add($"games[{game.Id}]: missing versionCode.");
             }
 
             foreach (var (sourceName, source) in game.Sources)
@@ -79,7 +79,7 @@ public static partial class ManifestValidator
 
         if (source.Urls is null || source.Urls.Count == 0)
         {
-            warnings.Add($"{path}: nessun URL disponibile (accettabile solo se pensato per import locale).");
+            warnings.Add($"{path}: no URL available (only acceptable if intended for local import).");
         }
     }
 
@@ -97,7 +97,7 @@ public static partial class ManifestValidator
     {
         if (tool is null)
         {
-            warnings.Add($"{path}: sezione assente nel manifest.");
+            warnings.Add($"{path}: section missing from the manifest.");
             return;
         }
 
@@ -119,13 +119,13 @@ public static partial class ManifestValidator
     {
         if (string.IsNullOrWhiteSpace(sha256) || sha256.Equals("TODO", StringComparison.OrdinalIgnoreCase))
         {
-            warnings.Add($"{path}: sha256 non ancora impostato (TODO).");
+            warnings.Add($"{path}: sha256 not set yet (TODO).");
             return;
         }
 
         if (!Sha256Pattern().IsMatch(sha256))
         {
-            errors.Add($"{path}: sha256 non valido ('{sha256}'), attesi 64 caratteri esadecimali.");
+            errors.Add($"{path}: invalid sha256 ('{sha256}'), expected 64 hexadecimal characters.");
         }
     }
 }

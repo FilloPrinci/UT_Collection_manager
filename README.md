@@ -1,11 +1,11 @@
 # UT Launcher
 
-Launcher/installer multipiattaforma (Windows e Linux) per **Unreal Tournament 99**, **Unreal Tournament 2004** e **Unreal Tournament 4 (2017)**, con versioni garantite identiche per giocare insieme.
+Cross-platform (Windows and Linux) launcher/installer for **Unreal Tournament 99**, **Unreal Tournament 2004**, and **Unreal Tournament 4 (2017)**, with guaranteed identical versions for playing together.
 
-- Specifica: [`docs/SPEC.md`](docs/SPEC.md)
-- Manifest (versioni, URL, hash): [`manifest/manifest.json`](manifest/manifest.json)
-- Istruzioni per Claude Code: [`CLAUDE.md`](CLAUDE.md)
+- Specification: [`docs/SPEC.md`](docs/SPEC.md)
+- Manifest (versions, URLs, hashes): [`manifest/manifest.json`](manifest/manifest.json)
+- Instructions for Claude Code: [`CLAUDE.md`](CLAUDE.md)
 
-## Crediti
-- [OldUnreal](https://www.oldunreal.com) per le patch e gli installer di UT99 e UT2004.
-- [UT4ever](https://ut4ever.org) e timiimit (UT4UU, master server) per UT4.
+## Credits
+- [OldUnreal](https://www.oldunreal.com) for the UT99 and UT2004 patches and installers.
+- [UT4ever](https://ut4ever.org) and timiimit (UT4UU, master server) for UT4.

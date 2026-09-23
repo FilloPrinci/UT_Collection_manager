@@ -16,8 +16,8 @@ public static class ListCommand
         }
         catch (ManifestLoadException ex)
         {
-            logger.LogError(ex, "Impossibile caricare il manifest incorporato");
-            Console.Error.WriteLine($"Errore: {ex.Message}");
+            logger.LogError(ex, "Could not load the embedded manifest");
+            Console.Error.WriteLine($"Error: {ex.Message}");
             return 1;
         }
 
@@ -33,9 +33,9 @@ public static class ListCommand
             logger.LogError("Manifest: {Error}", error);
         }
 
-        Console.WriteLine($"Manifest v{manifest.ManifestVersion} (aggiornato: {manifest.Updated})");
+        Console.WriteLine($"Manifest v{manifest.ManifestVersion} (updated: {manifest.Updated})");
         Console.WriteLine();
-        Console.WriteLine($"{"ID",-10} {"Versione",-20} Nome");
+        Console.WriteLine($"{"ID",-10} {"Version",-20} Name");
         foreach (var game in manifest.Games)
         {
             Console.WriteLine($"{game.Id,-10} {game.VersionCode,-20} {game.Name}");
@@ -44,13 +44,13 @@ public static class ListCommand
         if (validation.Warnings.Count > 0)
         {
             Console.WriteLine();
-            Console.WriteLine($"{validation.Warnings.Count} avviso/i (usa --verbose o consulta il log per i dettagli).");
+            Console.WriteLine($"{validation.Warnings.Count} warning(s) (use --verbose or check the log for details).");
         }
 
         if (!validation.IsValid)
         {
             Console.Error.WriteLine();
-            Console.Error.WriteLine($"{validation.Errors.Count} errore/i nel manifest:");
+            Console.Error.WriteLine($"{validation.Errors.Count} error(s) in the manifest:");
             foreach (var error in validation.Errors)
             {
                 Console.Error.WriteLine($"  - {error}");

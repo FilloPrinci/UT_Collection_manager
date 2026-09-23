@@ -15,17 +15,17 @@ public sealed class ToolManager(Downloader downloader, IPlatform platform)
     {
         var toolEntry = GetToolEntry(kind, manifest);
         var platformFile = GetPlatformFile(toolEntry, platform.Id)
-            ?? throw new ToolNotConfiguredException($"Strumento '{kind}' non configurato per la piattaforma '{platform.Id}'.");
+            ?? throw new ToolNotConfiguredException($"Tool '{kind}' not configured for platform '{platform.Id}'.");
 
         if (IsMissingOrTodo(platformFile.Url) || IsMissingOrTodo(platformFile.Sha256))
         {
             throw new ToolNotConfiguredException(
-                $"Strumento '{kind}' non ha ancora URL/hash impostati nel manifest (voce TODO).");
+                $"Tool '{kind}' does not have a URL/hash set in the manifest yet (TODO entry).");
         }
 
         if (string.IsNullOrWhiteSpace(platformFile.Exe))
         {
-            throw new ToolNotConfiguredException($"Nome eseguibile mancante per lo strumento '{kind}'.");
+            throw new ToolNotConfiguredException($"Missing executable name for tool '{kind}'.");
         }
 
         var toolDirectory = Path.Combine(platform.GetRootDirectory(), "tools", kind.ToString().ToLowerInvariant());
@@ -56,9 +56,9 @@ public sealed class ToolManager(Downloader downloader, IPlatform platform)
     private static ToolEntry GetToolEntry(ExternalToolKind kind, Manifest.Manifest manifest) => kind switch
     {
         ExternalToolKind.SevenZip => manifest.Tools?.SevenZip
-            ?? throw new ToolNotConfiguredException("Sezione tools.sevenZip mancante nel manifest."),
+            ?? throw new ToolNotConfiguredException("Section tools.sevenZip missing from the manifest."),
         ExternalToolKind.Unshield => manifest.Tools?.Unshield
-            ?? throw new ToolNotConfiguredException("Sezione tools.unshield mancante nel manifest."),
+            ?? throw new ToolNotConfiguredException("Section tools.unshield missing from the manifest."),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
     };
 

@@ -1,25 +1,25 @@
 {
   "manifestVersion": 1,
   "updated": "2026-09-23",
-  "notes": "Fonte di verita' per versioni, URL e hash. Il launcher NON deve mai installare file il cui SHA-256 non corrisponde a una voce di questo manifest.",
+  "notes": "Source of truth for versions, URLs, and hashes. The launcher must NEVER install a file whose SHA-256 does not match an entry in this manifest.",
 
   "tools": {
     "sevenZip": {
-      "notes": "7-Zip portabile per ISO, .7z e .tar.bz2. TODO: fissare versione, URL e SHA-256 (script tools/compute-hashes).",
+      "notes": "Portable 7-Zip for ISO, .7z, and .tar.bz2. TODO: pin version, URL, and SHA-256 (tools/compute-hashes script).",
       "windows": { "url": "TODO", "sha256": "TODO", "exe": "7z.exe" },
       "linux":   { "url": "TODO", "sha256": "TODO", "exe": "7zz" }
     },
     "unshield": {
-      "notes": "Per i .cab InstallShield di UT2004. OldUnreal fornisce binari pronti nel repo FullGameInstallers. TODO: URL fissati a un commit + SHA-256.",
+      "notes": "For UT2004's InstallShield .cab files. OldUnreal provides ready-made binaries in the FullGameInstallers repo. TODO: URLs pinned to a commit + SHA-256.",
       "windows": { "url": "TODO", "sha256": "TODO", "exe": "unshield.exe" },
       "linux":   { "url": "TODO", "sha256": "TODO", "exe": "unshield" }
     },
     "umu": {
-      "notes": "Solo Linux, solo per UT4. Versione portabile (zipapp) dalle release di umu-launcher. TODO: versione + SHA-256.",
+      "notes": "Linux only, UT4 only. Portable version (zipapp) from umu-launcher releases. TODO: version + SHA-256.",
       "linux": { "url": "TODO", "sha256": "TODO", "exe": "umu-run" }
     },
     "proton": {
-      "notes": "Solo Linux, solo per UT4. Versione fissata per ambienti riproducibili. TODO: scegliere release GE-Proton + SHA-256.",
+      "notes": "Linux only, UT4 only. Pinned version for reproducible environments. TODO: choose a GE-Proton release + SHA-256.",
       "linux": { "name": "TODO", "url": "TODO", "sha256": "TODO" }
     }
   },
@@ -94,7 +94,7 @@
               ]
             },
             {
-              "notes": "ISO diversa (archive.org), stesso gioco. Usata solo come riserva.",
+              "notes": "Different ISO (archive.org), same game. Used only as a fallback.",
               "size": 3751510016,
               "sha256": "7ae95242aa23d5e31b353811e1e920a4377fa53cf728b8edcb17006b7f3c4e97",
               "urls": [ "https://archive.org/download/ut-2004/UT2004.ISO" ]
@@ -118,10 +118,10 @@
         }
       },
       "launch": {
-        "windows": { "exe": "System/UT2004.exe", "args": "", "notes": "TODO: verificare il nome esatto dopo la patch (eventuale System64)" },
-        "linux-x64": { "exe": "System/ut2004-bin-amd64", "args": "", "notes": "In alternativa lo script System/UT2004" }
+        "windows": { "exe": "System/UT2004.exe", "args": "", "notes": "TODO: verify the exact name after the patch (possibly System64)" },
+        "linux-x64": { "exe": "System/ut2004-bin-amd64", "args": "", "notes": "Alternatively, the System/UT2004 script" }
       },
-      "cdKey": { "required": false, "notes": "Da verificare in prova. Se serve, campo opzionale nelle impostazioni, mai nel manifest." },
+      "cdKey": { "required": false, "notes": "To be verified in testing. If needed, an optional field in settings, never in the manifest." },
       "network": { "defaultPortUdp": 7777 }
     },
 
@@ -143,7 +143,7 @@
           "size": 10429026048,
           "sha256": "2cf35660cd3a6aa77222e11e101418ec5734f8e2e251afadbed5a2a30aea078b",
           "urls": [],
-          "notes": "Il file v1.0.3 sul server UT4ever ha la stessa dimensione: aggiungerlo come URL solo dopo averne verificato l'hash."
+          "notes": "The v1.0.3 file on the UT4ever server has the same size: only add it as a URL after verifying its hash."
         }
       },
       "diskSpaceRequiredBytes": 20447232000,

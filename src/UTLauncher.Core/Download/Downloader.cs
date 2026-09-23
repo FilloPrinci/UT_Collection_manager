@@ -19,7 +19,7 @@ public sealed class Downloader(HttpClient httpClient, ILogger<Downloader> logger
     {
         if (request.Urls.Count == 0)
         {
-            throw new DownloadException($"Nessun URL disponibile per '{request.DestinationPath}'.");
+            throw new DownloadException($"No URL available for '{request.DestinationPath}'.");
         }
 
         var destinationDirectory = Path.GetDirectoryName(Path.GetFullPath(request.DestinationPath));
@@ -31,7 +31,7 @@ public sealed class Downloader(HttpClient httpClient, ILogger<Downloader> logger
         var existing = await TryUseExistingFileAsync(request, cancellationToken).ConfigureAwait(false);
         if (existing is not null)
         {
-            logger.LogInformation("File già presente e verificato: {Path}", request.DestinationPath);
+            logger.LogInformation("File already present and verified: {Path}", request.DestinationPath);
             return existing;
         }
 
@@ -47,20 +47,20 @@ public sealed class Downloader(HttpClient httpClient, ILogger<Downloader> logger
                 var resumed = await DownloadFromUrlAsync(url, partPath, request, progress, cancellationToken)
                     .ConfigureAwait(false);
 
-                progress?.Report(TaskProgress.Indeterminate($"Verifica hash di {Path.GetFileName(request.DestinationPath)}"));
+                progress?.Report(TaskProgress.Indeterminate($"Verifying hash of {Path.GetFileName(request.DestinationPath)}"));
                 var hashResult = await HashCalculator.ComputeFileAsync(partPath, progress: null, cancellationToken)
                     .ConfigureAwait(false);
 
                 if (!HashCalculator.Matches(hashResult.Sha256Hex, request.ExpectedSha256))
                 {
                     logger.LogError(
-                        "Hash non corrispondente per {Url}: atteso {Expected}, ottenuto {Actual}",
+                        "Hash mismatch for {Url}: expected {Expected}, got {Actual}",
                         url,
                         request.ExpectedSha256,
                         hashResult.Sha256Hex);
                     File.Delete(partPath);
                     lastError = new HashMismatchException(
-                        $"Hash non corrispondente per '{request.DestinationPath}' scaricato da '{url}'.",
+                        $"Hash mismatch for '{request.DestinationPath}' downloaded from '{url}'.",
                         request.ExpectedSha256,
                         hashResult.Sha256Hex);
                     continue;
@@ -68,7 +68,7 @@ public sealed class Downloader(HttpClient httpClient, ILogger<Downloader> logger
 
                 File.Move(partPath, request.DestinationPath, overwrite: true);
                 logger.LogInformation(
-                    "Download completato e verificato: {Path} ({Size} byte)",
+                    "Download completed and verified: {Path} ({Size} bytes)",
                     request.DestinationPath,
                     hashResult.Size);
                 return new DownloadResult(request.DestinationPath, hashResult.Size, hashResult.Sha256Hex, resumed);
@@ -79,12 +79,12 @@ public sealed class Downloader(HttpClient httpClient, ILogger<Downloader> logger
             }
             catch (Exception ex) when (ex is HttpRequestException or IOException)
             {
-                logger.LogWarning(ex, "Download fallito da {Url}, provo il mirror successivo se disponibile", url);
+                logger.LogWarning(ex, "Download failed from {Url}, trying next mirror if available", url);
                 lastError = ex;
             }
         }
 
-        throw new DownloadException($"Tutti i mirror sono falliti per '{request.DestinationPath}'.", lastError);
+        throw new DownloadException($"All mirrors failed for '{request.DestinationPath}'.", lastError);
     }
 
     private async Task<DownloadResult?> TryUseExistingFileAsync(DownloadRequest request, CancellationToken cancellationToken)
@@ -97,7 +97,7 @@ public sealed class Downloader(HttpClient httpClient, ILogger<Downloader> logger
         if (request.ExpectedSize is { } expectedSize && new FileInfo(request.DestinationPath).Length != expectedSize)
         {
             logger.LogWarning(
-                "File esistente ha dimensione diversa da quella attesa, verrà riscaricato: {Path}",
+                "Existing file has a different size than expected, it will be re-downloaded: {Path}",
                 request.DestinationPath);
             File.Delete(request.DestinationPath);
             return null;
@@ -109,7 +109,7 @@ public sealed class Downloader(HttpClient httpClient, ILogger<Downloader> logger
         if (!HashCalculator.Matches(hashResult.Sha256Hex, request.ExpectedSha256))
         {
             logger.LogWarning(
-                "File esistente non corrisponde all'hash atteso, verrà riscaricato: {Path}",
+                "Existing file does not match the expected hash, it will be re-downloaded: {Path}",
                 request.DestinationPath);
             File.Delete(request.DestinationPath);
             return null;
@@ -140,7 +140,7 @@ public sealed class Downloader(HttpClient httpClient, ILogger<Downloader> logger
         var resumed = existingLength > 0 && response.StatusCode == HttpStatusCode.PartialContent;
         if (existingLength > 0 && !resumed)
         {
-            logger.LogInformation("Il server non supporta la ripresa per {Url}, riparto da zero", url);
+            logger.LogInformation("Server does not support resume for {Url}, starting over from scratch", url);
             existingLength = 0;
         }
 
@@ -181,8 +181,8 @@ public sealed class Downloader(HttpClient httpClient, ILogger<Downloader> logger
                     : null;
 
                 progress?.Report(totalBytes.HasValue
-                    ? TaskProgress.Determinate($"Download {fileName}", transferred, totalBytes.Value, bytesPerSecond, eta)
-                    : TaskProgress.Indeterminate($"Download {fileName}"));
+                    ? TaskProgress.Determinate($"Downloading {fileName}", transferred, totalBytes.Value, bytesPerSecond, eta)
+                    : TaskProgress.Indeterminate($"Downloading {fileName}"));
             }
         }
 

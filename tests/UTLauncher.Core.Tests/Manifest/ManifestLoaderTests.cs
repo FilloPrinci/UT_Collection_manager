@@ -46,7 +46,7 @@ public class ManifestLoaderTests
         var loader = new ManifestLoader();
 
         await Assert.ThrowsAsync<ManifestLoadException>(
-            () => loader.LoadFromFileAsync("/percorso/inesistente/manifest.json", CancellationToken.None));
+            () => loader.LoadFromFileAsync("/nonexistent/path/manifest.json", CancellationToken.None));
     }
 
     [Fact]

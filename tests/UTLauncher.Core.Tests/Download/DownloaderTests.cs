@@ -15,7 +15,7 @@ public class DownloaderTests
     [Fact]
     public async Task DownloadAsync_SavesFile_AndVerifiesHash_OnFreshDownload()
     {
-        var content = Encoding.UTF8.GetBytes("contenuto di prova");
+        var content = Encoding.UTF8.GetBytes("test content");
         var handler = new FakeHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new ByteArrayContent(content),
@@ -44,7 +44,7 @@ public class DownloaderTests
     [Fact]
     public async Task DownloadAsync_TriesNextMirror_WhenFirstFails()
     {
-        var content = Encoding.UTF8.GetBytes("contenuto dal secondo mirror");
+        var content = Encoding.UTF8.GetBytes("content from the second mirror");
         var attemptedUrls = new List<string>();
         var handler = new FakeHttpMessageHandler(req =>
         {
@@ -80,8 +80,8 @@ public class DownloaderTests
     [Fact]
     public async Task DownloadAsync_ResumesFromPartialFile_UsingRangeHeader()
     {
-        var firstHalf = Encoding.UTF8.GetBytes("prima metà ");
-        var secondHalf = Encoding.UTF8.GetBytes("seconda metà");
+        var firstHalf = Encoding.UTF8.GetBytes("first half ");
+        var secondHalf = Encoding.UTF8.GetBytes("second half");
         var fullContent = firstHalf.Concat(secondHalf).ToArray();
 
         var handler = new FakeHttpMessageHandler(req =>
@@ -119,8 +119,8 @@ public class DownloaderTests
     [Fact]
     public async Task DownloadAsync_RestartsFromScratch_WhenServerIgnoresRange()
     {
-        var staleData = Encoding.UTF8.GetBytes("dati vecchi e incompleti");
-        var freshContent = Encoding.UTF8.GetBytes("contenuto fresco completo");
+        var staleData = Encoding.UTF8.GetBytes("old and incomplete data");
+        var freshContent = Encoding.UTF8.GetBytes("fresh complete content");
 
         var handler = new FakeHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(freshContent) });
@@ -148,7 +148,7 @@ public class DownloaderTests
     [Fact]
     public async Task DownloadAsync_ThrowsDownloadException_AndCleansUpPart_WhenHashMismatchOnAllMirrors()
     {
-        var content = Encoding.UTF8.GetBytes("contenuto sbagliato");
+        var content = Encoding.UTF8.GetBytes("wrong content");
         var handler = new FakeHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(content) });
         var downloader = CreateDownloader(handler);
@@ -176,9 +176,9 @@ public class DownloaderTests
     [Fact]
     public async Task DownloadAsync_SkipsNetwork_WhenValidFileAlreadyExists()
     {
-        var content = Encoding.UTF8.GetBytes("già scaricato in precedenza");
+        var content = Encoding.UTF8.GetBytes("already downloaded previously");
         var handler = new FakeHttpMessageHandler(_ =>
-            throw new InvalidOperationException("Non doveva essere chiamata alcuna richiesta HTTP."));
+            throw new InvalidOperationException("No HTTP request should have been made."));
         var downloader = CreateDownloader(handler);
         var destination = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
@@ -201,8 +201,8 @@ public class DownloaderTests
     [Fact]
     public async Task DownloadAsync_RedownloadsFile_WhenExistingFileHashDoesNotMatch()
     {
-        var staleContent = Encoding.UTF8.GetBytes("contenuto vecchio non valido");
-        var freshContent = Encoding.UTF8.GetBytes("contenuto nuovo valido");
+        var staleContent = Encoding.UTF8.GetBytes("old invalid content");
+        var freshContent = Encoding.UTF8.GetBytes("new valid content");
         var handler = new FakeHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(freshContent) });
         var downloader = CreateDownloader(handler);

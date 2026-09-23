@@ -29,7 +29,7 @@ if (positional.Length == 0)
 }
 
 var command = positional[0];
-logger.LogDebug("Comando CLI: {Command} (verbose={Verbose})", command, verbose);
+logger.LogDebug("CLI command: {Command} (verbose={Verbose})", command, verbose);
 
 try
 {
@@ -37,15 +37,15 @@ try
     {
         "list" => await ListCommand.RunAsync(logger, cts.Token),
         "hash" when positional.Length >= 2 => await HashCommand.RunAsync(positional[1], logger, cts.Token),
-        "hash" => Fail("Uso: utlauncher hash <file|url>"),
+        "hash" => Fail("Usage: utlauncher hash <file|url>"),
         "doctor" or "install" or "verify" or "launch" or "uninstall" => NotYetImplemented(command),
-        _ => Fail($"Comando sconosciuto: '{command}'."),
+        _ => Fail($"Unknown command: '{command}'."),
     };
 }
 catch (OperationCanceledException)
 {
-    logger.LogWarning("Operazione annullata dall'utente");
-    Console.Error.WriteLine("Annullato.");
+    logger.LogWarning("Operation cancelled by the user");
+    Console.Error.WriteLine("Cancelled.");
     return 130;
 }
 
@@ -58,7 +58,7 @@ int Fail(string message)
 
 int NotYetImplemented(string cmd)
 {
-    Console.Error.WriteLine($"Comando '{cmd}' non ancora implementato (arriverà in un passo successivo del piano).");
+    Console.Error.WriteLine($"Command '{cmd}' not implemented yet (coming in a later step of the plan).");
     return 1;
 }
 
@@ -67,9 +67,9 @@ void PrintUsage()
     Console.WriteLine("""
         utlauncher list
         utlauncher install <ut99|ut2004|ut4> [--dest <path>] [--source-url <url>] [--source-file <path>] [--verbose]
-        utlauncher verify  <gioco>
-        utlauncher launch  <gioco>
-        utlauncher uninstall <gioco>
+        utlauncher verify  <game>
+        utlauncher launch  <game>
+        utlauncher uninstall <game>
         utlauncher doctor
         utlauncher hash <file|url>
         """);

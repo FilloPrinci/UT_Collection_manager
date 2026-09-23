@@ -10,7 +10,7 @@ public static class HashCommand
         var isUrl = Uri.TryCreate(target, UriKind.Absolute, out var uri) &&
             (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 
-        logger.LogInformation("Calcolo hash di {Target} ({Kind})", target, isUrl ? "URL" : "file locale");
+        logger.LogInformation("Computing hash of {Target} ({Kind})", target, isUrl ? "URL" : "local file");
 
         try
         {
@@ -25,7 +25,7 @@ public static class HashCommand
             {
                 if (!File.Exists(target))
                 {
-                    Console.Error.WriteLine($"Errore: file non trovato: '{target}'.");
+                    Console.Error.WriteLine($"Error: file not found: '{target}'.");
                     return 1;
                 }
 
@@ -39,8 +39,8 @@ public static class HashCommand
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or UnauthorizedAccessException)
         {
-            logger.LogError(ex, "Calcolo hash fallito per {Target}", target);
-            Console.Error.WriteLine($"Errore: {ex.Message}");
+            logger.LogError(ex, "Hash computation failed for {Target}", target);
+            Console.Error.WriteLine($"Error: {ex.Message}");
             return 1;
         }
     }

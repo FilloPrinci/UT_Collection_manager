@@ -26,7 +26,7 @@ public class ToolManagerTests
     [Fact]
     public async Task EnsureAvailableAsync_DownloadsAndMakesExecutable_WhenConfigured()
     {
-        var content = Encoding.UTF8.GetBytes("finto binario 7-zip");
+        var content = Encoding.UTF8.GetBytes("fake 7-zip binary");
         var handler = new FakeHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(content) });
         var downloader = new Downloader(new HttpClient(handler), NullLogger<Downloader>.Instance);
@@ -70,7 +70,7 @@ public class ToolManagerTests
     public async Task EnsureAvailableAsync_Throws_WhenHashIsTodo()
     {
         var handler = new FakeHttpMessageHandler(_ =>
-            throw new InvalidOperationException("Non doveva essere effettuata alcuna richiesta."));
+            throw new InvalidOperationException("No request should have been made."));
         var downloader = new Downloader(new HttpClient(handler), NullLogger<Downloader>.Instance);
 
         var rootDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -91,7 +91,7 @@ public class ToolManagerTests
     public async Task EnsureAvailableAsync_Throws_WhenToolSectionMissing()
     {
         var handler = new FakeHttpMessageHandler(_ =>
-            throw new InvalidOperationException("Non doveva essere effettuata alcuna richiesta."));
+            throw new InvalidOperationException("No request should have been made."));
         var downloader = new Downloader(new HttpClient(handler), NullLogger<Downloader>.Instance);
 
         var rootDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
