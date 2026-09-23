@@ -7,7 +7,8 @@ Launcher/installer multipiattaforma (Windows + Linux) per UT99, UT2004 e UT4 (pr
 **Leggi sempre `docs/SPEC.md` prima di lavorare**: è la specifica completa. `manifest/manifest.json` è la fonte di verità per versioni, URL e hash.
 
 ## Stack
-- C# / .NET 8, UI Avalonia (MVVM con CommunityToolkit.Mvvm), log con Serilog, test con xUnit.
+- C# / .NET 10 (LTS), UI Avalonia (MVVM con CommunityToolkit.Mvvm), log con Serilog, test con xUnit.
+- Distribuzione Linux: tarball self-contained + script `install.sh`, stessa build per Debian/Ubuntu/Fedora/Arch (vedi SPEC.md §2). Niente pacchetti .deb/.rpm/pacman separati.
 - Progetti: `UTLauncher.Core` (tutta la logica, nessuna dipendenza UI), `UTLauncher.App` (Avalonia), `UTLauncher.Cli`, `UTLauncher.Core.Tests`.
 
 ## Regole non negoziabili

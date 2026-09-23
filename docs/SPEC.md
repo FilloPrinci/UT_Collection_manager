@@ -22,12 +22,12 @@
 
 | Ambito | Scelta |
 |---|---|
-| Linguaggio | C# / .NET 8 |
+| Linguaggio | C# / .NET 10 (LTS) |
 | UI | Avalonia (MVVM, CommunityToolkit.Mvvm) |
 | Log | Microsoft.Extensions.Logging + Serilog (file ruotato + sink in memoria per la console) |
 | Test | xUnit |
 | Distribuzione Windows | eseguibile self-contained `win-x64` (single file) |
-| Distribuzione Linux | AppImage `linux-x64` (in alternativa tarball self-contained). **No Flatpak** per ora (la sandbox complica umu). |
+| Distribuzione Linux | tarball self-contained `linux-x64` + script `install.sh` (estrae in `~/.local/share/UTLauncher`, crea voce `.desktop`). Stessa build per Debian, Ubuntu, Fedora, Arch: nessuna dipendenza da GTK/Qt di sistema (Avalonia usa Skia) né dal package manager, basta una glibc recente. AppImage resta disponibile come artefatto secondario opzionale, non come metodo principale (evita il rischio "libfuse2 mancante" sulle distro recenti). **No Flatpak** per ora (la sandbox complica umu). |
 
 ### Struttura della soluzione
 
@@ -206,7 +206,7 @@ Stessi task, stesso log, progresso testuale.
 5. **UI Avalonia**: lista giochi, installazione con progresso, console log, impostazioni, controllo sistema.
 6. **Windows**: UT99 e UT2004 con dipendenze.
 7. **UT4**: Windows, poi Linux con umu/Proton.
-8. Packaging: exe single-file Windows, AppImage Linux.
+8. Packaging: exe single-file Windows; tarball self-contained + `install.sh` Linux (AppImage opzionale, secondario).
 
 ### Criteri di accettazione (fase VM Linux)
 - Il launcher si avvia (UI) e la CLI funziona.
