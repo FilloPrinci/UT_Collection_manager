@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UTLauncher.App/UTLauncher.App.csproj" />
+    <Project Path="src/UTLauncher.Cli/UTLauncher.Cli.csproj" />
+    <Project Path="src/UTLauncher.Core/UTLauncher.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UTLauncher.Core.Tests/UTLauncher.Core.Tests.csproj" />
+  </Folder>
+</Solution>
