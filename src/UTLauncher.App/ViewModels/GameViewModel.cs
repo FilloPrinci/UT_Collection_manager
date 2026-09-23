@@ -38,12 +38,19 @@ public partial class GameViewModel : ViewModelBase
     public partial string StatusText { get; set; }
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LaunchCommand))]
     public partial bool IsInstalled { get; set; }
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelInstallCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LaunchCommand))]
     public partial bool IsBusy { get; set; }
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LaunchCommand))]
     public partial bool IsLaunching { get; set; }
 
     [ObservableProperty]
@@ -86,8 +93,6 @@ public partial class GameViewModel : ViewModelBase
         IsBusy = true;
         IsIndeterminate = true;
         ProgressText = "Starting...";
-        InstallCommand.NotifyCanExecuteChanged();
-        CancelInstallCommand.NotifyCanExecuteChanged();
 
         _installCancellation = new CancellationTokenSource();
         var progress = new UiTaskProgress(this);
@@ -119,8 +124,6 @@ public partial class GameViewModel : ViewModelBase
             {
                 IsBusy = false;
                 IsIndeterminate = false;
-                InstallCommand.NotifyCanExecuteChanged();
-                CancelInstallCommand.NotifyCanExecuteChanged();
             });
         }
     }
@@ -169,8 +172,6 @@ public partial class GameViewModel : ViewModelBase
         var previousStatus = StatusText;
         IsLaunching = true;
         StatusText = "Running...";
-        LaunchCommand.NotifyCanExecuteChanged();
-        InstallCommand.NotifyCanExecuteChanged();
 
         try
         {
@@ -188,12 +189,7 @@ public partial class GameViewModel : ViewModelBase
         }
         finally
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                IsLaunching = false;
-                LaunchCommand.NotifyCanExecuteChanged();
-                InstallCommand.NotifyCanExecuteChanged();
-            });
+            Dispatcher.UIThread.Post(() => IsLaunching = false);
         }
     }
 
