@@ -10,7 +10,6 @@ public sealed record Manifest(
     [property: JsonPropertyName("games")] IReadOnlyList<GameEntry> Games);
 
 public sealed record ToolsSection(
-    [property: JsonPropertyName("sevenZip")] ToolEntry? SevenZip,
     [property: JsonPropertyName("unshield")] ToolEntry? Unshield,
     [property: JsonPropertyName("umu")] ToolEntry? Umu,
     [property: JsonPropertyName("proton")] ToolEntry? Proton);

@@ -55,8 +55,6 @@ public sealed class ToolManager(Downloader downloader, IPlatform platform)
 
     private static ToolEntry GetToolEntry(ExternalToolKind kind, Manifest.Manifest manifest) => kind switch
     {
-        ExternalToolKind.SevenZip => manifest.Tools?.SevenZip
-            ?? throw new ToolNotConfiguredException("Section tools.sevenZip missing from the manifest."),
         ExternalToolKind.Unshield => manifest.Tools?.Unshield
             ?? throw new ToolNotConfiguredException("Section tools.unshield missing from the manifest."),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),

@@ -14,8 +14,8 @@ public class ToolManagerTests
 {
     private static string Sha256Of(byte[] data) => Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(data));
 
-    private static Manifest.Manifest MakeManifest(ToolEntry sevenZip) =>
-        new(1, "2026-01-01", null, new ToolsSection(sevenZip, null, null, null), []);
+    private static Manifest.Manifest MakeManifest(ToolEntry unshield) =>
+        new(1, "2026-01-01", null, new ToolsSection(unshield, null, null), []);
 
     private CorePlatform.IPlatform MakePlatform(string rootDir)
     {
@@ -26,7 +26,7 @@ public class ToolManagerTests
     [Fact]
     public async Task EnsureAvailableAsync_DownloadsAndMakesExecutable_WhenConfigured()
     {
-        var content = Encoding.UTF8.GetBytes("fake 7-zip binary");
+        var content = Encoding.UTF8.GetBytes("fake unshield binary");
         var handler = new FakeHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(content) });
         var downloader = new Downloader(new HttpClient(handler), NullLogger<Downloader>.Instance);
@@ -38,18 +38,18 @@ public class ToolManagerTests
         var toolEntry = new ToolEntry(
             Notes: null,
             Windows: null,
-            Linux: new ToolPlatformFile("https://example.com/7zz", Sha256Of(content), "7zz", null));
+            Linux: new ToolPlatformFile("https://example.com/unshield", Sha256Of(content), "unshield", null));
         var manifest = MakeManifest(toolEntry);
 
         try
         {
             var path = await toolManager.EnsureAvailableAsync(
-                ExternalToolKind.SevenZip, manifest, progress: null, CancellationToken.None);
+                ExternalToolKind.Unshield, manifest, progress: null, CancellationToken.None);
 
             Assert.True(File.Exists(path));
             Assert.Equal(content, await File.ReadAllBytesAsync(path));
             Assert.Contains("tools", path);
-            Assert.Contains("sevenzip", path.ToLowerInvariant());
+            Assert.Contains("unshield", path.ToLowerInvariant());
 
             if (!OperatingSystem.IsWindows())
             {
@@ -80,11 +80,11 @@ public class ToolManagerTests
         var toolEntry = new ToolEntry(
             Notes: null,
             Windows: null,
-            Linux: new ToolPlatformFile("TODO", "TODO", "7zz", null));
+            Linux: new ToolPlatformFile("TODO", "TODO", "unshield", null));
         var manifest = MakeManifest(toolEntry);
 
         await Assert.ThrowsAsync<ToolNotConfiguredException>(
-            () => toolManager.EnsureAvailableAsync(ExternalToolKind.SevenZip, manifest, progress: null, CancellationToken.None));
+            () => toolManager.EnsureAvailableAsync(ExternalToolKind.Unshield, manifest, progress: null, CancellationToken.None));
     }
 
     [Fact]
@@ -98,9 +98,9 @@ public class ToolManagerTests
         var platform = MakePlatform(rootDir);
         var toolManager = new ToolManager(downloader, platform);
 
-        var manifest = new Manifest.Manifest(1, "2026-01-01", null, new ToolsSection(null, null, null, null), []);
+        var manifest = new Manifest.Manifest(1, "2026-01-01", null, new ToolsSection(null, null, null), []);
 
         await Assert.ThrowsAsync<ToolNotConfiguredException>(
-            () => toolManager.EnsureAvailableAsync(ExternalToolKind.SevenZip, manifest, progress: null, CancellationToken.None));
+            () => toolManager.EnsureAvailableAsync(ExternalToolKind.Unshield, manifest, progress: null, CancellationToken.None));
     }
 }

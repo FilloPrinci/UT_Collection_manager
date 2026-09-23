@@ -55,7 +55,6 @@ public static partial class ManifestValidator
             ValidatePatchPlatform(game.Patch?.LinuxX64, $"games[{game.Id}].patch.linux-x64", errors, warnings);
         }
 
-        ValidateToolEntry(manifest.Tools?.SevenZip, "tools.sevenZip", errors, warnings);
         ValidateToolEntry(manifest.Tools?.Unshield, "tools.unshield", errors, warnings);
         ValidateToolEntry(manifest.Tools?.Umu, "tools.umu", errors, warnings);
         ValidateToolEntry(manifest.Tools?.Proton, "tools.proton", errors, warnings);

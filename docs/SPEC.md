@@ -26,6 +26,7 @@
 | UI | Avalonia (MVVM, CommunityToolkit.Mvvm) |
 | Logging | Microsoft.Extensions.Logging + Serilog (rotated file + in-memory sink for the console) |
 | Tests | xUnit |
+| Archive extraction | DiscUtils.Iso9660 (ISO) + SharpCompress (.7z, .tar.bz2), pure .NET, in-process — no external 7-Zip binary to download/verify. `unshield` remains an external tool (UT2004's InstallShield .cab format has no pure-.NET reader). |
 | Windows distribution | self-contained `win-x64` executable (single file) |
 | Linux distribution | self-contained `linux-x64` tarball + `install.sh` script (extracts to `~/.local/share/UTLauncher`, creates a `.desktop` entry). Same build for Debian, Ubuntu, Fedora, Arch: no dependency on system GTK/Qt (Avalonia uses Skia) or on the package manager, just a recent glibc. AppImage remains available as an optional secondary artifact, not as the primary method (avoids the "missing libfuse2" risk on recent distros). **No Flatpak** for now (the sandbox complicates umu). |
 
@@ -54,7 +55,7 @@ The Core / App / Cli separation is mandatory: all logic must be testable and usa
 
 - JSON file (`manifest/manifest.json`), versioned in the repo.
 - The launcher uses a copy bundled in the build and, if reachable, downloads the latest version from the GitHub repo (configurable URL). If the remote one is invalid, it falls back to the bundled copy.
-- Contains: external tools (7-Zip, unshield, umu, Proton) with URLs and hashes, each game's sources with multiple URLs + size + SHA-256, patches pinned by tag, launch commands, special configurations.
+- Contains: external tools (unshield, umu, Proton) with URLs and hashes, each game's sources with multiple URLs + size + SHA-256, patches pinned by tag, launch commands, special configurations.
 - **Golden rule:** no file enters an installation unless its SHA-256 matches an entry in the manifest.
 
 ---
@@ -78,7 +79,7 @@ Rules:
 - Rotated log files (last 5):
   - Windows: `%LOCALAPPDATA%\UTLauncher\logs\`
   - Linux: `${XDG_DATA_HOME:-~/.local/share}/UTLauncher/logs/`
-- Stdout/stderr and **exit code** of every external process (7-Zip, unshield, umu, winetricks, vcredist, DXSETUP, the game itself) end up in the log.
+- Stdout/stderr and **exit code** of every external process (unshield, umu, winetricks, vcredist, DXSETUP, the game itself) end up in the log.
 - Verbose mode (setting or `--verbose`): full commands, URLs, environment variables passed to umu/Proton.
 - Every error shown to the user has a **Show log** button that opens the console at the error.
 
@@ -132,7 +133,7 @@ The steps below are a summary. **For UT99 and UT2004, the source of truth for de
 ### 6.1 UT99 (GOTY) — native on both systems
 1. Download/verify `UT_GOTY_CD1.iso` and `utbonuspack4-zip.7z`.
 2. Download/verify the `v469e` patch for the platform (Windows `-Windows-x86.zip`, Linux `-Linux-amd64.tar.bz2`).
-3. Extract the ISO (7-Zip) to the destination, **excluding** the patterns listed in the OldUnreal scripts (default inis, Windows binaries on Linux, old setup files, translations).
+3. Extract the ISO (in-process, via DiscUtils.Iso9660 — no external tool) to the destination, **excluding** the patterns listed in the OldUnreal scripts (default inis, Windows binaries on Linux, old setup files, translations).
 4. Extract Bonus Pack 4.
 5. Extract the patch on top of the files.
 6. Decompress the `.uz` maps (like `steps/unpack_uz_maps.sh`).
@@ -200,7 +201,7 @@ Same tasks, same logging, textual progress.
 ## 8. Development plan
 
 1. **Skeleton**: solution, projects, logging (file + console), manifest loader with validation, CLI `list` and `hash`.
-2. **Infrastructure**: downloader (mirrors, resume, streaming SHA-256), task/progress, installation registry, external tool management (7-Zip, unshield) downloaded and verified.
+2. **Infrastructure**: downloader (mirrors, resume, streaming SHA-256), task/progress, installation registry, external tool management (unshield) downloaded and verified. ISO/.7z/.tar.bz2 extraction uses pure .NET libraries (DiscUtils.Iso9660, SharpCompress) in-process — no external 7-Zip tool.
 3. **UT99** end-to-end on Linux (CLI) → VM test.
 4. **UT2004** end-to-end on Linux (CLI) → VM test.
 5. **Avalonia UI**: game list, installation with progress, console log, settings, system check.
@@ -222,5 +223,5 @@ Same tasks, same logging, textual progress.
 - UT2004's Windows executable name after patch 3374.
 - UT4 on Linux: UT4UU's behavior with `InstallInfo.bin` under Proton, login and copy-paste.
 - Hash of the UT4 v1.0.3 file on the UT4ever server (possible mirror).
-- Choice and hash of 7-Zip, unshield, umu, GE-Proton.
+- Choice and hash of unshield, umu, GE-Proton.
 - Final name and license for the launcher; courtesy contact with UT4ever (_shakka) and OldUnreal.

@@ -4,11 +4,6 @@
   "notes": "Source of truth for versions, URLs, and hashes. The launcher must NEVER install a file whose SHA-256 does not match an entry in this manifest.",
 
   "tools": {
-    "sevenZip": {
-      "notes": "Portable 7-Zip for ISO, .7z, and .tar.bz2. TODO: pin version, URL, and SHA-256 (tools/compute-hashes script).",
-      "windows": { "url": "TODO", "sha256": "TODO", "exe": "7z.exe" },
-      "linux":   { "url": "TODO", "sha256": "TODO", "exe": "7zz" }
-    },
     "unshield": {
       "notes": "For UT2004's InstallShield .cab files. OldUnreal provides ready-made binaries in the FullGameInstallers repo. TODO: URLs pinned to a commit + SHA-256.",
       "windows": { "url": "TODO", "sha256": "TODO", "exe": "unshield.exe" },
