@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [windows, linux]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-restore
+
+      - name: Publish Windows
+        if: matrix.target == 'windows'
+        run: |
+          dotnet publish src/UTLauncher.App -c Release -r win-x64 --self-contained true \
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=None -o publish/win-x64/app
+          mv publish/win-x64/app/UTLauncher.App.exe publish/win-x64/app/UTLauncher.exe
+          find publish/win-x64 -name "*.pdb" -delete
+
+      - name: Package Windows
+        if: matrix.target == 'windows'
+        run: |
+          mkdir -p dist
+          cp README.md publish/win-x64/app/README.md
+          cd publish/win-x64/app
+          zip -r ../../../dist/utlauncher-windows-x64.zip .
+
+      - name: Publish Linux
+        if: matrix.target == 'linux'
+        run: |
+          dotnet publish src/UTLauncher.App -c Release -r linux-x64 --self-contained true \
+            -p:DebugType=None -o publish/linux-x64/utlauncher-linux-x64/app
+          dotnet publish src/UTLauncher.Cli -c Release -r linux-x64 --self-contained true \
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=None -o publish/linux-x64/utlauncher-linux-x64/cli
+          find publish/linux-x64 -name "*.pdb" -delete
+          cp packaging/linux/install.sh publish/linux-x64/utlauncher-linux-x64/install.sh
+          cp README.md publish/linux-x64/utlauncher-linux-x64/README.md
+          chmod +x publish/linux-x64/utlauncher-linux-x64/install.sh
+          chmod +x publish/linux-x64/utlauncher-linux-x64/app/UTLauncher.App
+          chmod +x publish/linux-x64/utlauncher-linux-x64/cli/UTLauncher.Cli
+
+      - name: Package Linux
+        if: matrix.target == 'linux'
+        run: |
+          mkdir -p dist
+          tar -czf dist/utlauncher-linux-x64.tar.gz -C publish/linux-x64 utlauncher-linux-x64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: utlauncher-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
