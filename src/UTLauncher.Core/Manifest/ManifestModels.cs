@@ -107,7 +107,12 @@ public sealed record VcRedistInstaller(
     [property: JsonPropertyName("url")] string? Url,
     [property: JsonPropertyName("sha256")] string? Sha256,
     [property: JsonPropertyName("size")] long? Size,
-    [property: JsonPropertyName("installArgs")] string? InstallArgs);
+    [property: JsonPropertyName("installArgs")] string? InstallArgs,
+    // The x86 redistributable is a 32-bit installer: on 64-bit Windows its registry key lives
+    // under the WOW6432Node-redirected view, invisible to our 64-bit process unless it explicitly
+    // opens the 32-bit registry view. Set true for the x86 dependency, leave false (native/64-bit
+    // view) for x64.
+    [property: JsonPropertyName("registryView32")] bool RegistryView32 = false);
 
 // DirectX End-User Runtime web installer: OldUnreal's script has no presence check, it just runs
 // dxwebsetup.exe /q unconditionally every time (a fast no-op when nothing needs updating).

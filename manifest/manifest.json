@@ -89,6 +89,7 @@
           "vcRedistX86": {
             "registryKeyHKLM": "SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x86",
             "registryValueName": "Installed",
+            "registryView32": true,
             "fileName": "vc_redist.x86.exe",
             "url": "https://download.visualstudio.microsoft.com/download/pr/bd1c8d9d-ba95-4eee-bc6e-df1fcc876373/0C09F2611660441084CE0DF425C51C11E147E6447963C3690F97E0B25C55ED64/VC_redist.x86.exe",
             "size": 13953392,
@@ -168,6 +169,7 @@
           "vcRedistX86": {
             "registryKeyHKLM": "SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x86",
             "registryValueName": "Installed",
+            "registryView32": true,
             "fileName": "vc_redist.x86.exe",
             "url": "https://download.visualstudio.microsoft.com/download/pr/bd1c8d9d-ba95-4eee-bc6e-df1fcc876373/0C09F2611660441084CE0DF425C51C11E147E6447963C3690F97E0B25C55ED64/VC_redist.x86.exe",
             "size": 13953392,

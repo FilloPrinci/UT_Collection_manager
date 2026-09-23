@@ -99,7 +99,9 @@ public sealed class WindowsDependencyInstaller(
 
         try
         {
-            using var key = Registry.LocalMachine.OpenSubKey(dependency.RegistryKeyHklm);
+            var view = dependency.RegistryView32 ? RegistryView.Registry32 : RegistryView.Registry64;
+            using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view);
+            using var key = baseKey.OpenSubKey(dependency.RegistryKeyHklm);
             return key?.GetValue(dependency.RegistryValueName) is int value && value == 1;
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)

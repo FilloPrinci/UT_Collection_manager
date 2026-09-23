@@ -30,6 +30,24 @@ public class ManifestLoaderTests
         Assert.True(result.IsValid, string.Join("; ", result.Errors));
     }
 
+    [Theory]
+    [InlineData("ut99")]
+    [InlineData("ut2004")]
+    public async Task LoadBundledAsync_VcRedistX86_UsesThe32BitRegistryView(string gameId)
+    {
+        // Regression guard: the x86 redistributable's "Installed" flag lives under the
+        // WOW6432Node-redirected view on 64-bit Windows, invisible to our 64-bit process without
+        // this flag (see WindowsDependencyInstaller.IsVcRedistInstalled) - a 1638 install failure
+        // ("another version is already installed") is the symptom when it's missing.
+        var loader = new ManifestLoader();
+        var manifest = await loader.LoadBundledAsync(CancellationToken.None);
+
+        var game = manifest.Games.Single(g => g.Id == gameId);
+
+        Assert.True(game.Dependencies?.Windows?.VcRedistX86?.RegistryView32);
+        Assert.False(game.Dependencies?.Windows?.VcRedistX64?.RegistryView32 ?? false);
+    }
+
     [Fact]
     public async Task LoadFromStreamAsync_ThrowsManifestLoadException_OnMalformedJson()
     {
