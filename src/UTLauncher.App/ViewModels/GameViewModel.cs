@@ -44,6 +44,9 @@ public partial class GameViewModel : ViewModelBase
     public partial bool IsBusy { get; set; }
 
     [ObservableProperty]
+    public partial bool IsLaunching { get; set; }
+
+    [ObservableProperty]
     public partial bool IsIndeterminate { get; set; }
 
     [ObservableProperty]
@@ -75,7 +78,7 @@ public partial class GameViewModel : ViewModelBase
         });
     }
 
-    private bool CanInstall() => IsSupported && !IsBusy;
+    private bool CanInstall() => IsSupported && !IsBusy && !IsLaunching;
 
     [RelayCommand(CanExecute = nameof(CanInstall))]
     private async Task InstallAsync()
@@ -155,6 +158,42 @@ public partial class GameViewModel : ViewModelBase
 
     [RelayCommand(CanExecute = nameof(CanCancelInstall))]
     private void CancelInstall() => _installCancellation?.Cancel();
+
+    private bool CanLaunch() => IsInstalled && !IsBusy && !IsLaunching;
+
+    [RelayCommand(CanExecute = nameof(CanLaunch))]
+    private async Task LaunchAsync()
+    {
+        var previousStatus = StatusText;
+        IsLaunching = true;
+        StatusText = "Running...";
+        LaunchCommand.NotifyCanExecuteChanged();
+        InstallCommand.NotifyCanExecuteChanged();
+
+        try
+        {
+            var launcher = new Core.Games.GameLauncher(
+                _services.ProcessRunner,
+                _services.Platform,
+                _services.LoggerFactory.CreateLogger<Core.Games.GameLauncher>());
+            await launcher.LaunchAsync(_game, InstallPath, CancellationToken.None).ConfigureAwait(false);
+            Dispatcher.UIThread.Post(() => StatusText = previousStatus);
+        }
+        catch (Exception ex)
+        {
+            _services.LoggerFactory.CreateLogger<GameViewModel>().LogError(ex, "Failed to launch {GameId}", Id);
+            Dispatcher.UIThread.Post(() => StatusText = $"Launch failed: {ex.Message}");
+        }
+        finally
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                IsLaunching = false;
+                LaunchCommand.NotifyCanExecuteChanged();
+                InstallCommand.NotifyCanExecuteChanged();
+            });
+        }
+    }
 
     [RelayCommand]
     private void OpenFolder()

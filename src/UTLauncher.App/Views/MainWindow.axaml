@@ -68,6 +68,9 @@
                                                 <Button Content="Cancel"
                                                         Command="{Binding CancelInstallCommand}"
                                                         IsVisible="{Binding IsBusy}" />
+                                                <Button Content="Play"
+                                                        Command="{Binding LaunchCommand}"
+                                                        IsVisible="{Binding IsInstalled}" />
                                                 <Button Content="Open folder"
                                                         Command="{Binding OpenFolderCommand}"
                                                         IsVisible="{Binding IsInstalled}" />

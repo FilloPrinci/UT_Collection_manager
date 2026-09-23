@@ -42,7 +42,9 @@ try
         "verify" when positional.Length >= 2 => await VerifyCommand.RunAsync(positional[1], platform, loggingSession.Factory, cts.Token),
         "verify" => Fail("Usage: utlauncher verify <game>"),
         "doctor" => await DoctorCommand.RunAsync(loggingSession.Factory, cts.Token),
-        "launch" or "uninstall" => NotYetImplemented(command),
+        "launch" when positional.Length >= 2 => await LaunchCommand.RunAsync(positional[1], platform, loggingSession.Factory, cts.Token),
+        "launch" => Fail("Usage: utlauncher launch <game>"),
+        "uninstall" => NotYetImplemented(command),
         _ => Fail($"Unknown command: '{command}'."),
     };
 }
