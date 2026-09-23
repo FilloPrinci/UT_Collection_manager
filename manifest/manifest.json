@@ -9,7 +9,15 @@
       "windows": {
         "url": "https://raw.githubusercontent.com/OldUnreal/FullGameInstallers/103b2b269cd9dd85b5098071aec1d80b5118877e/Windows/Installer/tools/unshield.exe",
         "sha256": "fa1a61593b0eb8af89a6f04e7018de58a7bbedac6e806276e9bc8d45f705bf99",
-        "exe": "unshield.exe"
+        "exe": "unshield.exe",
+        "extraFiles": [
+          {
+            "fileName": "zlib.dll",
+            "url": "https://raw.githubusercontent.com/OldUnreal/FullGameInstallers/103b2b269cd9dd85b5098071aec1d80b5118877e/Windows/Installer/tools/zlib.dll",
+            "size": 83968,
+            "sha256": "0d3fed34290d632c55afe28dcf06dc88f4e76d4604f697d4d8ecf7e8422f1fe6"
+          }
+        ]
       },
       "linux": {
         "url": "https://raw.githubusercontent.com/OldUnreal/FullGameInstallers/103b2b269cd9dd85b5098071aec1d80b5118877e/Linux/deps/unshield-amd64",

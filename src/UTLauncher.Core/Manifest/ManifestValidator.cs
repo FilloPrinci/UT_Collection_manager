@@ -112,6 +112,11 @@ public static partial class ManifestValidator
         }
 
         ValidateHash(file.Sha256, path, errors, warnings);
+
+        foreach (var extraFile in file.ExtraFiles ?? [])
+        {
+            ValidateHash(extraFile.Sha256, $"{path}.extraFiles[{extraFile.FileName}]", errors, warnings);
+        }
     }
 
     private static void ValidateHash(string? sha256, string path, List<string> errors, List<string> warnings)

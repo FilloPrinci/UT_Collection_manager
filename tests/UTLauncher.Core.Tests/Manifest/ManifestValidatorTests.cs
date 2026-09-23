@@ -112,4 +112,40 @@ public class ManifestValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.Contains("alternatives[0]"));
     }
+
+    [Fact]
+    public void Validate_ReportsError_ForToolExtraFileWithMalformedHash()
+    {
+        var extraFile = new ToolExtraFile("zlib.dll", "https://example.com/zlib.dll", "not-a-hash", null);
+        var windows = new ToolPlatformFile("https://example.com/unshield.exe", ValidHash, "unshield.exe", null, [extraFile]);
+        var manifest = new ManifestModel(
+            ManifestVersion: 1,
+            Updated: "2026-01-01",
+            Notes: null,
+            Tools: new ToolsSection(new ToolEntry(null, windows, null), null, null),
+            Games: [MakeGame("ut99")]);
+
+        var result = ManifestValidator.Validate(manifest);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.Contains("extraFiles[zlib.dll]") && e.Contains("invalid sha256"));
+    }
+
+    [Fact]
+    public void Validate_ReportsWarning_NotError_ForToolExtraFileWithTodoHash()
+    {
+        var extraFile = new ToolExtraFile("zlib.dll", "https://example.com/zlib.dll", "TODO", null);
+        var windows = new ToolPlatformFile("https://example.com/unshield.exe", ValidHash, "unshield.exe", null, [extraFile]);
+        var manifest = new ManifestModel(
+            ManifestVersion: 1,
+            Updated: "2026-01-01",
+            Notes: null,
+            Tools: new ToolsSection(new ToolEntry(null, windows, null), null, null),
+            Games: [MakeGame("ut99")]);
+
+        var result = ManifestValidator.Validate(manifest);
+
+        Assert.True(result.IsValid);
+        Assert.Contains(result.Warnings, w => w.Contains("extraFiles[zlib.dll]"));
+    }
 }

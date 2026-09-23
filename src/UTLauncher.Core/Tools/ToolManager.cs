@@ -36,7 +36,31 @@ public sealed class ToolManager(Downloader downloader, IPlatform platform)
 
         MakeExecutableOnUnix(destinationPath);
 
+        foreach (var extraFile in platformFile.ExtraFiles ?? [])
+        {
+            await EnsureExtraFileAvailableAsync(kind, toolDirectory, extraFile, progress, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         return destinationPath;
+    }
+
+    private async Task EnsureExtraFileAvailableAsync(
+        ExternalToolKind kind,
+        string toolDirectory,
+        ToolExtraFile extraFile,
+        IProgress<TaskProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        if (IsMissingOrTodo(extraFile.Url) || IsMissingOrTodo(extraFile.Sha256) || IsMissingOrTodo(extraFile.FileName))
+        {
+            throw new ToolNotConfiguredException(
+                $"Tool '{kind}' has an extra file without a URL/hash/fileName set in the manifest yet (TODO entry).");
+        }
+
+        var destinationPath = Path.Combine(toolDirectory, extraFile.FileName!);
+        var request = new DownloadRequest([extraFile.Url!], destinationPath, extraFile.Sha256!, extraFile.Size);
+        await downloader.DownloadAsync(request, progress, cancellationToken).ConfigureAwait(false);
     }
 
     private static bool IsMissingOrTodo(string? value) =>

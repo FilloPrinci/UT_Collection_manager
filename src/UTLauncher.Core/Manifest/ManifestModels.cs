@@ -23,7 +23,16 @@ public sealed record ToolPlatformFile(
     [property: JsonPropertyName("url")] string? Url,
     [property: JsonPropertyName("sha256")] string? Sha256,
     [property: JsonPropertyName("exe")] string? Exe,
-    [property: JsonPropertyName("name")] string? Name);
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("extraFiles")] IReadOnlyList<ToolExtraFile>? ExtraFiles = null);
+
+// A file the tool's executable depends on at runtime (e.g. a DLL it dynamically links against),
+// downloaded and hash-verified into the same tool directory alongside the executable.
+public sealed record ToolExtraFile(
+    [property: JsonPropertyName("fileName")] string? FileName,
+    [property: JsonPropertyName("url")] string? Url,
+    [property: JsonPropertyName("sha256")] string? Sha256,
+    [property: JsonPropertyName("size")] long? Size);
 
 public sealed record GameEntry(
     [property: JsonPropertyName("id")] string Id,
