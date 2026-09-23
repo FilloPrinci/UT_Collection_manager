@@ -240,7 +240,7 @@ public sealed class Ut2004Installer(
 
         var result = await processRunner.RunAsync(
             unshieldPath,
-            ["-d", dataDirectory, "x", mainCabPath],
+            ["-d", ToUnshieldPath(dataDirectory), "x", ToUnshieldPath(mainCabPath)],
             workingDirectory: null,
             cancellationToken).ConfigureAwait(false);
 
@@ -262,6 +262,16 @@ public sealed class Ut2004Installer(
 
         return dataDirectory;
     }
+
+    // unshield's Windows/MinGW build derives each cabinet's sibling filename (data1.hdr,
+    // data2.cab, ...) by locating the last path separator in the given path and only checks for
+    // '/', not '\' (see twogood/unshield#37, confirmed and fixed on their end by using forward
+    // slashes). Without this, a '\'-only path containing a digit anywhere - e.g. the "2004" in
+    // "...\UT2004\...\Cabs\data1.cab" - makes it truncate at that digit instead, look for the
+    // wrong file, and fail with "Failed to open ... as an InstallShield Cabinet File". Windows'
+    // own file APIs accept '/' identically to '\', so this sidesteps the bug outright; Linux
+    // paths already use '/' natively, making this a no-op there.
+    private static string ToUnshieldPath(string path) => path.Replace('\\', '/');
 
     private static void InstallExtractedFiles(string dataDirectory, string destination, bool isWindows)
     {
