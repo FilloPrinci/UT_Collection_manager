@@ -1,0 +1,198 @@
+{
+  "manifestVersion": 1,
+  "updated": "2026-09-23",
+  "notes": "Fonte di verita' per versioni, URL e hash. Il launcher NON deve mai installare file il cui SHA-256 non corrisponde a una voce di questo manifest.",
+
+  "tools": {
+    "sevenZip": {
+      "notes": "7-Zip portabile per ISO, .7z e .tar.bz2. TODO: fissare versione, URL e SHA-256 (script tools/compute-hashes).",
+      "windows": { "url": "TODO", "sha256": "TODO", "exe": "7z.exe" },
+      "linux":   { "url": "TODO", "sha256": "TODO", "exe": "7zz" }
+    },
+    "unshield": {
+      "notes": "Per i .cab InstallShield di UT2004. OldUnreal fornisce binari pronti nel repo FullGameInstallers. TODO: URL fissati a un commit + SHA-256.",
+      "windows": { "url": "TODO", "sha256": "TODO", "exe": "unshield.exe" },
+      "linux":   { "url": "TODO", "sha256": "TODO", "exe": "unshield" }
+    },
+    "umu": {
+      "notes": "Solo Linux, solo per UT4. Versione portabile (zipapp) dalle release di umu-launcher. TODO: versione + SHA-256.",
+      "linux": { "url": "TODO", "sha256": "TODO", "exe": "umu-run" }
+    },
+    "proton": {
+      "notes": "Solo Linux, solo per UT4. Versione fissata per ambienti riproducibili. TODO: scegliere release GE-Proton + SHA-256.",
+      "linux": { "name": "TODO", "url": "TODO", "sha256": "TODO" }
+    }
+  },
+
+  "games": [
+    {
+      "id": "ut99",
+      "name": "Unreal Tournament (GOTY)",
+      "versionCode": "UT99-469e",
+      "reference": "OldUnreal/FullGameInstallers @ 103b2b269cd9dd85b5098071aec1d80b5118877e (Linux/src/entrypoints/install-ut99.sh, Windows/UT_GOTY.nsi)",
+      "sources": {
+        "iso": {
+          "fileName": "UT_GOTY_CD1.iso",
+          "size": 649633792,
+          "sha256": "e184984ca88f001c5ddd52035d76cd64e266e26c74975161b5ed72366c74704f",
+          "urls": [
+            "https://files.oldunreal.net/UT_GOTY_CD1.ISO",
+            "https://files2.oldunreal.net/UT_GOTY_CD1.ISO",
+            "https://files3.oldunreal.net/UT_GOTY_CD1.ISO",
+            "https://archive.org/download/ut-goty/UT_GOTY_CD1.iso"
+          ]
+        },
+        "bonusPack4": {
+          "fileName": "utbonuspack4-zip.7z",
+          "size": 11268844,
+          "sha256": "5b7a1080724a122a596c226c50d4dc7c2d7636ceaf067e9c12112014a170ffba",
+          "urls": [
+            "https://files.oldunreal.net/utbonuspack4-zip.7z",
+            "https://files2.oldunreal.net/utbonuspack4-zip.7z",
+            "https://files3.oldunreal.net/utbonuspack4-zip.7z"
+          ]
+        }
+      },
+      "patch": {
+        "tag": "v469e",
+        "windows": {
+          "fileName": "OldUnreal-UTPatch469e-Windows-x86.zip",
+          "url": "https://github.com/OldUnreal/UnrealTournamentPatches/releases/download/v469e/OldUnreal-UTPatch469e-Windows-x86.zip",
+          "size": 106165760,
+          "sha256": "8c94eb7e990f5480b1fb7bcb1bd15c2512da134dbf01bfa16e7f99f0a8a0ee86"
+        },
+        "linux-x64": {
+          "fileName": "OldUnreal-UTPatch469e-Linux-amd64.tar.bz2",
+          "url": "https://github.com/OldUnreal/UnrealTournamentPatches/releases/download/v469e/OldUnreal-UTPatch469e-Linux-amd64.tar.bz2",
+          "size": 75316202,
+          "sha256": "08c806aa3721b1970045aa158ad90051329d982e8a9a3661153900e9ccbf6b0c"
+        }
+      },
+      "launch": {
+        "windows": { "exe": "System/UnrealTournament.exe", "args": "" },
+        "linux-x64": { "exe": "System64/ut-bin", "args": "" }
+      },
+      "network": { "defaultPortUdp": 7777 }
+    },
+
+    {
+      "id": "ut2004",
+      "name": "Unreal Tournament 2004",
+      "versionCode": "UT04-3374p23",
+      "reference": "OldUnreal/FullGameInstallers @ 103b2b269cd9dd85b5098071aec1d80b5118877e (Linux/src/entrypoints/install-ut2004.sh, Windows/UT2004.nsi)",
+      "sources": {
+        "iso": {
+          "fileName": "UT2004.iso",
+          "alternatives": [
+            {
+              "size": 2995322880,
+              "sha256": "43e9182ae20bcbc0f6f4588fee6c1b336c261f1465403118a1973b09b1a22541",
+              "urls": [
+                "https://files.oldunreal.net/UT2004.ISO",
+                "https://files2.oldunreal.net/UT2004.ISO",
+                "https://files3.oldunreal.net/UT2004.ISO"
+              ]
+            },
+            {
+              "notes": "ISO diversa (archive.org), stesso gioco. Usata solo come riserva.",
+              "size": 3751510016,
+              "sha256": "7ae95242aa23d5e31b353811e1e920a4377fa53cf728b8edcb17006b7f3c4e97",
+              "urls": [ "https://archive.org/download/ut-2004/UT2004.ISO" ]
+            }
+          ]
+        }
+      },
+      "patch": {
+        "tag": "3374-preview-23",
+        "windows": {
+          "fileName": "OldUnreal-UT2004Patch3374-Windows-094b94dc.zip",
+          "url": "https://github.com/OldUnreal/UT2004Patches/releases/download/3374-preview-23/OldUnreal-UT2004Patch3374-Windows-094b94dc.zip",
+          "size": 47278042,
+          "sha256": "fd81fa557943966f4425ffc20c8ec3bed24203250f454877950a1d062b654bd3"
+        },
+        "linux-x64": {
+          "fileName": "OldUnreal-UT2004Patch3374-Linux-094b94dc.tar.bz2",
+          "url": "https://github.com/OldUnreal/UT2004Patches/releases/download/3374-preview-23/OldUnreal-UT2004Patch3374-Linux-094b94dc.tar.bz2",
+          "size": 59562107,
+          "sha256": "179ea43c8831bff147005850cd373c0ec2b70dcf6f841c2109c1525ef11ad4d3"
+        }
+      },
+      "launch": {
+        "windows": { "exe": "System/UT2004.exe", "args": "", "notes": "TODO: verificare il nome esatto dopo la patch (eventuale System64)" },
+        "linux-x64": { "exe": "System/ut2004-bin-amd64", "args": "", "notes": "In alternativa lo script System/UT2004" }
+      },
+      "cdKey": { "required": false, "notes": "Da verificare in prova. Se serve, campo opzionale nelle impostazioni, mai nel manifest." },
+      "network": { "defaultPortUdp": 7777 }
+    },
+
+    {
+      "id": "ut4",
+      "name": "Unreal Tournament 4 (pre-alpha 2017)",
+      "versionCode": "UT4-UT4ever-1.1.0",
+      "reference": "utshakka/ut4installer (InstallerConfig.cs, HandleDependencies.cs, HandleDirectories.cs)",
+      "sources": {
+        "package": {
+          "fileName": "UT4 Installer - v1.1.0.zip",
+          "size": 10539478448,
+          "sha256": "c9f452c81f9b3e603cb18d17cb9bca1d880c1dc5daecc1ee3768a7bd83aee967",
+          "innerEntry": "UT4 Installer - v1.1.0/Files/UnrealTournament (installer_v1.1.0).zip",
+          "urls": [ "http://downloads.ut4ever.box.ca:22152/game%20files/UT4%20Installer%20-%20v1.1.0.zip" ]
+        },
+        "game": {
+          "fileName": "UnrealTournament (installer_v1.1.0).zip",
+          "size": 10429026048,
+          "sha256": "2cf35660cd3a6aa77222e11e101418ec5734f8e2e251afadbed5a2a30aea078b",
+          "urls": [],
+          "notes": "Il file v1.0.3 sul server UT4ever ha la stessa dimensione: aggiungerlo come URL solo dopo averne verificato l'hash."
+        }
+      },
+      "diskSpaceRequiredBytes": 20447232000,
+      "masterServer": {
+        "domain": "master-ut4.timiimit.com",
+        "protocol": "https",
+        "engineIniSections": [
+          "OnlineSubsystemMcp.OnlineContentControlsServiceMcp UnrealTournamentDev",
+          "OnlineSubsystemMcp.BaseServiceMcp",
+          "OnlineSubsystemMcp.GameServiceMcp",
+          "OnlineSubsystemMcp.AccountServiceMcp",
+          "OnlineSubsystemMcp.OnlineFriendsMcp",
+          "OnlineSubsystemMcp.PersonaServiceMcp",
+          "OnlineSubsystemMcp.OnlineImageServiceMcp"
+        ]
+      },
+      "ut4uuInstallInfo": [
+        "UnrealTournament/Plugins/UT4UU/InstallInfo.bin",
+        "WindowsServer/UnrealTournament/Plugins/UT4UU/InstallInfo.bin"
+      ],
+      "accountRegistrationUrl": "https://ut4.timiimit.com/",
+      "launch": {
+        "windows": {
+          "exe": "Engine/Binaries/Win64/UE4-Win64-Shipping.exe",
+          "workingDir": "Engine/Binaries/Win64",
+          "args": "UnrealTournament -epicapp=UnrealTournamentDev -epicenv=Prod -EpicPortal"
+        },
+        "linux-x64": {
+          "runner": "umu",
+          "windowsInstallPath": "C:\\Games\\UnrealTournament",
+          "exe": "Engine/Binaries/Win64/UE4-Win64-Shipping.exe",
+          "workingDir": "Engine/Binaries/Win64",
+          "args": "UnrealTournament -epicapp=UnrealTournamentDev -epicenv=Prod -EpicPortal",
+          "winetricks": [ "vcrun2013" ]
+        }
+      },
+      "dependencies": {
+        "windows": {
+          "directxJune2010": { "checkFilesInSystem32": [ "xinput1_3.dll", "XAudio2_7.dll", "XAPOFX1_5.dll", "X3DAudio1_7.dll" ] },
+          "vcredist2013x64": {
+            "registryKeysHKLM": [
+              "SOFTWARE\\Classes\\Installer\\Dependencies\\{050d4fc8-5d48-4b8f-8972-47c82c46020f}",
+              "SOFTWARE\\Classes\\Installer\\Dependencies\\{042d26ef-3dbe-4c25-95d3-4c1b11b235a7}"
+            ],
+            "installArgs": "/install /quiet /norestart"
+          }
+        }
+      },
+      "network": { "defaultPortUdp": 7777 }
+    }
+  ]
+}
