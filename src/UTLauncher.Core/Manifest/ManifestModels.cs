@@ -24,7 +24,10 @@ public sealed record ToolPlatformFile(
     [property: JsonPropertyName("sha256")] string? Sha256,
     [property: JsonPropertyName("exe")] string? Exe,
     [property: JsonPropertyName("name")] string? Name,
-    [property: JsonPropertyName("extraFiles")] IReadOnlyList<ToolExtraFile>? ExtraFiles = null);
+    [property: JsonPropertyName("extraFiles")] IReadOnlyList<ToolExtraFile>? ExtraFiles = null,
+    // Set when Url points to an archive rather than the executable itself: the tar entry path to
+    // extract as the tool's executable (e.g. umu-launcher's release is a tar wrapping "umu/umu-run").
+    [property: JsonPropertyName("archiveEntry")] string? ArchiveEntry = null);
 
 // A file the tool's executable depends on at runtime (e.g. a DLL it dynamically links against),
 // downloaded and hash-verified into the same tool directory alongside the executable.

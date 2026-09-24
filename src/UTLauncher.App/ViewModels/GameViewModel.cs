@@ -259,10 +259,11 @@ public partial class GameViewModel : ViewModelBase
             var installer = new Ut4Installer(
                 _services.Downloader,
                 _services.WindowsDependencyInstaller,
+                _services.UmuRunner,
                 _services.Registry,
                 _services.Platform,
                 _services.LoggerFactory.CreateLogger<Ut4Installer>());
-            return installer.InstallAsync(_game, InstallPath, progress, cancellationToken);
+            return installer.InstallAsync(_services.Manifest, _game, InstallPath, progress, cancellationToken);
         }
 
         if (Id == "ut2004")
@@ -311,9 +312,11 @@ public partial class GameViewModel : ViewModelBase
         {
             var launcher = new Core.Games.GameLauncher(
                 _services.ProcessRunner,
+                _services.Registry,
+                _services.UmuRunner,
                 _services.Platform,
                 _services.LoggerFactory.CreateLogger<Core.Games.GameLauncher>());
-            await launcher.LaunchAsync(_game, InstallPath, CancellationToken.None).ConfigureAwait(false);
+            await launcher.LaunchAsync(_services.Manifest, _game, InstallPath, CancellationToken.None).ConfigureAwait(false);
             Dispatcher.UIThread.Post(() => StatusText = previousStatus);
         }
         catch (Exception ex)

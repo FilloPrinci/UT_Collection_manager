@@ -1,3 +1,4 @@
+using System.Formats.Tar;
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -13,6 +14,21 @@ namespace UTLauncher.Core.Tests.Tools;
 public class ToolManagerTests
 {
     private static string Sha256Of(byte[] data) => Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(data));
+
+    private static byte[] MakeTar(string entryName, byte[] entryContent)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new TarWriter(stream, TarEntryFormat.Pax, leaveOpen: true))
+        {
+            var entry = new PaxTarEntry(TarEntryType.RegularFile, entryName)
+            {
+                DataStream = new MemoryStream(entryContent),
+            };
+            writer.WriteEntry(entry);
+        }
+
+        return stream.ToArray();
+    }
 
     private static Manifest.Manifest MakeManifest(ToolEntry unshield) =>
         new(1, "2026-01-01", null, new ToolsSection(unshield, null, null), []);
@@ -159,6 +175,95 @@ public class ToolManagerTests
 
         await Assert.ThrowsAsync<ToolNotConfiguredException>(
             () => toolManager.EnsureAvailableAsync(ExternalToolKind.Unshield, manifest, progress: null, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task EnsureAvailableAsync_ExtractsArchiveEntry_WhenArchiveEntryIsConfigured()
+    {
+        var exeContent = Encoding.UTF8.GetBytes("#!/bin/sh\nexit 0\n");
+        var tarBytes = MakeTar("umu/umu-run", exeContent);
+
+        var handler = new FakeHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(tarBytes) });
+        var downloader = new Downloader(new HttpClient(handler), NullLogger<Downloader>.Instance);
+
+        var rootDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var platform = MakePlatform(rootDir);
+        var toolManager = new ToolManager(downloader, platform);
+
+        var toolEntry = new ToolEntry(
+            Notes: null,
+            Windows: null,
+            Linux: new ToolPlatformFile(
+                "https://example.com/umu-launcher.tar", Sha256Of(tarBytes), "umu-run", null, ExtraFiles: null, ArchiveEntry: "umu/umu-run"));
+        var manifest = new Manifest.Manifest(1, "2026-01-01", null, new ToolsSection(null, toolEntry, null), []);
+
+        try
+        {
+            var path = await toolManager.EnsureAvailableAsync(ExternalToolKind.Umu, manifest, progress: null, CancellationToken.None);
+
+            Assert.True(File.Exists(path));
+            Assert.Equal(exeContent, await File.ReadAllBytesAsync(path));
+            // Only the extracted entry should remain: the staging archive is cleaned up.
+            Assert.False(File.Exists(path + ".archive"));
+
+            if (!OperatingSystem.IsWindows())
+            {
+                var mode = File.GetUnixFileMode(path);
+                Assert.True(mode.HasFlag(UnixFileMode.UserExecute));
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(rootDir))
+            {
+                Directory.Delete(rootDir, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task EnsureAvailableAsync_DoesNotRedownload_WhenArchiveEntryAlreadyExtracted()
+    {
+        var exeContent = Encoding.UTF8.GetBytes("#!/bin/sh\nexit 0\n");
+        var tarBytes = MakeTar("umu/umu-run", exeContent);
+        var requestCount = 0;
+
+        var handler = new FakeHttpMessageHandler(_ =>
+        {
+            requestCount++;
+            return requestCount == 1
+                ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(tarBytes) }
+                : throw new InvalidOperationException("Should not re-download once already extracted.");
+        });
+        var downloader = new Downloader(new HttpClient(handler), NullLogger<Downloader>.Instance);
+
+        var rootDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var platform = MakePlatform(rootDir);
+        var toolManager = new ToolManager(downloader, platform);
+
+        var toolEntry = new ToolEntry(
+            Notes: null,
+            Windows: null,
+            Linux: new ToolPlatformFile(
+                "https://example.com/umu-launcher.tar", Sha256Of(tarBytes), "umu-run", null, ExtraFiles: null, ArchiveEntry: "umu/umu-run"));
+        var manifest = new Manifest.Manifest(1, "2026-01-01", null, new ToolsSection(null, toolEntry, null), []);
+
+        try
+        {
+            await toolManager.EnsureAvailableAsync(ExternalToolKind.Umu, manifest, progress: null, CancellationToken.None);
+            var secondPath = await toolManager.EnsureAvailableAsync(ExternalToolKind.Umu, manifest, progress: null, CancellationToken.None);
+
+            Assert.Equal(1, requestCount);
+            Assert.True(File.Exists(secondPath));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDir))
+            {
+                Directory.Delete(rootDir, recursive: true);
+            }
+        }
     }
 
     [Fact]

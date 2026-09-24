@@ -78,13 +78,17 @@ public static class InstallCommand
             InstallationRecord record;
             if (gameId == "ut4")
             {
+                var toolManager = new ToolManager(downloader, platform);
+                var protonManager = new ProtonManager(downloader, platform);
+                var umuRunner = new UmuRunner(toolManager, protonManager, processRunner);
                 var ut4Installer = new Ut4Installer(
                     downloader,
                     windowsDependencyInstaller,
+                    umuRunner,
                     registry,
                     platform,
                     loggerFactory.CreateLogger<Ut4Installer>());
-                record = await ut4Installer.InstallAsync(game, destination, progress, cancellationToken)
+                record = await ut4Installer.InstallAsync(manifest, game, destination, progress, cancellationToken)
                     .ConfigureAwait(false);
             }
             else if (gameId == "ut2004")

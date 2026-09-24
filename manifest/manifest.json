@@ -26,12 +26,21 @@
       }
     },
     "umu": {
-      "notes": "Linux only, UT4 only. Portable version (zipapp) from umu-launcher releases. TODO: version + SHA-256.",
-      "linux": { "url": "TODO", "sha256": "TODO", "exe": "umu-run" }
+      "notes": "Linux only, UT4 only. Portable version (zipapp) from umu-launcher releases (v1.4.4, GPLv3). The release asset is a plain tar wrapping the zipapp at 'umu/umu-run'.",
+      "linux": {
+        "url": "https://github.com/Open-Wine-Components/umu-launcher/releases/download/1.4.4/umu-launcher-1.4.4-zipapp.tar",
+        "sha256": "eb590691841f7fad3fc3ad8fd5db4ccb87849fe7948e62b28ece7a4ee48cc851",
+        "exe": "umu-run",
+        "archiveEntry": "umu/umu-run"
+      }
     },
     "proton": {
-      "notes": "Linux only, UT4 only. Pinned version for reproducible environments. TODO: choose a GE-Proton release + SHA-256.",
-      "linux": { "name": "TODO", "url": "TODO", "sha256": "TODO" }
+      "notes": "Linux only, UT4 only. Pinned GE-Proton build for reproducible environments (GloriousEggroll/proton-ge-custom, GPLv2/LGPL). 'name' matches the tar's own top-level folder name, which is also the extracted directory name used as PROTONPATH.",
+      "linux": {
+        "name": "GE-Proton11-7-x86_64",
+        "url": "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/GE-Proton11-7/GE-Proton11-7-x86_64.tar.gz",
+        "sha256": "c5448b76a230384e2d7bc6beb5ccb97bafb7e2c3b6c527cb03a1a546bbcb00a0"
+      }
     }
   },
 

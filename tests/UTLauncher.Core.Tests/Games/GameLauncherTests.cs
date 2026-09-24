@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using UTLauncher.Core.Download;
 using UTLauncher.Core.Games;
+using UTLauncher.Core.InstallRegistry;
 using UTLauncher.Core.Manifest;
 using UTLauncher.Core.Processes;
+using UTLauncher.Core.Tools;
 using CorePlatform = UTLauncher.Core.Platform;
 
 namespace UTLauncher.Core.Tests.Games;
@@ -14,6 +17,8 @@ public class GameLauncherTests
         public string GetRootDirectory() => Path.GetTempPath();
         public string GetLogDirectory() => Path.GetTempPath();
     }
+
+    private static readonly Manifest.Manifest EmptyManifest = new(1, "2026-01-01", null, null, []);
 
     private static GameEntry MakeGame(IReadOnlyDictionary<string, LaunchEntry>? launch) => new(
         Id: "ut99",
@@ -34,8 +39,17 @@ public class GameLauncherTests
     private static LaunchEntry MakeLaunchEntry(string exe) =>
         new(Exe: exe, Args: "", WorkingDir: null, Notes: null, Runner: null, WindowsInstallPath: null, Winetricks: null);
 
-    private static GameLauncher CreateLauncher(string platformId) =>
-        new(new ProcessRunner(NullLogger<ProcessRunner>.Instance), new FakePlatform(platformId), NullLogger<GameLauncher>.Instance);
+    private static GameLauncher CreateLauncher(string platformId, string? registryPath = null)
+    {
+        var processRunner = new ProcessRunner(NullLogger<ProcessRunner>.Instance);
+        var platform = new FakePlatform(platformId);
+        var registry = new InstallationRegistry(registryPath ?? Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+        var downloader = new Downloader(new HttpClient(), NullLogger<Downloader>.Instance);
+        var toolManager = new ToolManager(downloader, platform);
+        var protonManager = new ProtonManager(downloader, platform);
+        var umuRunner = new UmuRunner(toolManager, protonManager, processRunner);
+        return new GameLauncher(processRunner, registry, umuRunner, platform, NullLogger<GameLauncher>.Instance);
+    }
 
     [Fact]
     public async Task LaunchAsync_RunsTheExecutableResolvedForTheCurrentPlatform()
@@ -59,7 +73,7 @@ public class GameLauncherTests
             var game = MakeGame(new Dictionary<string, LaunchEntry> { ["linux-x64"] = MakeLaunchEntry("System64/ut-bin") });
             var launcher = CreateLauncher("linux-x64");
 
-            var result = await launcher.LaunchAsync(game, installPath, CancellationToken.None);
+            var result = await launcher.LaunchAsync(EmptyManifest, game, installPath, CancellationToken.None);
 
             Assert.Equal(42, result.ExitCode);
         }
@@ -76,7 +90,7 @@ public class GameLauncherTests
         var launcher = CreateLauncher("linux-x64");
 
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => launcher.LaunchAsync(game, Path.GetTempPath(), CancellationToken.None));
+            () => launcher.LaunchAsync(EmptyManifest, game, Path.GetTempPath(), CancellationToken.None));
     }
 
     [Fact]
@@ -91,7 +105,40 @@ public class GameLauncherTests
             var launcher = CreateLauncher("linux-x64");
 
             await Assert.ThrowsAsync<FileNotFoundException>(
-                () => launcher.LaunchAsync(game, installPath, CancellationToken.None));
+                () => launcher.LaunchAsync(EmptyManifest, game, installPath, CancellationToken.None));
+        }
+        finally
+        {
+            Directory.Delete(installPath, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task LaunchAsync_Throws_WhenUmuRunnerHasNoPrefixRecorded()
+    {
+        // "runner": "umu" (UT4 on Linux) needs the prefix path recorded at install time; a game
+        // installed before that existed, or one whose install failed partway, has none.
+        var installPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var exeDirectory = Path.Combine(installPath, "Engine", "Binaries", "Win64");
+        Directory.CreateDirectory(exeDirectory);
+        await File.WriteAllTextAsync(Path.Combine(exeDirectory, "UE4-Win64-Shipping.exe"), "fake exe");
+
+        try
+        {
+            var launchEntry = new LaunchEntry(
+                Exe: "Engine/Binaries/Win64/UE4-Win64-Shipping.exe",
+                Args: "",
+                WorkingDir: null,
+                Notes: null,
+                Runner: "umu",
+                WindowsInstallPath: @"C:\Games\UnrealTournament",
+                Winetricks: null);
+            var game = MakeGame(new Dictionary<string, LaunchEntry> { ["linux-x64"] = launchEntry }) with { Id = "ut4" };
+            var registryPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            var launcher = CreateLauncher("linux-x64", registryPath);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => launcher.LaunchAsync(EmptyManifest, game, installPath, CancellationToken.None));
         }
         finally
         {

@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
+using UTLauncher.Core.Download;
 using UTLauncher.Core.Games;
 using UTLauncher.Core.InstallRegistry;
 using UTLauncher.Core.Platform;
 using UTLauncher.Core.Processes;
+using UTLauncher.Core.Tools;
 
 namespace UTLauncher.Cli.Commands;
 
@@ -39,9 +41,14 @@ public static class LaunchCommand
         }
 
         var processRunner = new ProcessRunner(loggerFactory.CreateLogger<ProcessRunner>());
-        var launcher = new GameLauncher(processRunner, platform, loggerFactory.CreateLogger<GameLauncher>());
+        using var httpClient = new HttpClient();
+        var downloader = new Downloader(httpClient, loggerFactory.CreateLogger<Downloader>());
+        var toolManager = new ToolManager(downloader, platform);
+        var protonManager = new ProtonManager(downloader, platform);
+        var umuRunner = new UmuRunner(toolManager, protonManager, processRunner);
+        var launcher = new GameLauncher(processRunner, registry, umuRunner, platform, loggerFactory.CreateLogger<GameLauncher>());
 
-        var result = await launcher.LaunchAsync(game, record.InstallPath, cancellationToken).ConfigureAwait(false);
+        var result = await launcher.LaunchAsync(manifest, game, record.InstallPath, cancellationToken).ConfigureAwait(false);
         return result.ExitCode;
     }
 }

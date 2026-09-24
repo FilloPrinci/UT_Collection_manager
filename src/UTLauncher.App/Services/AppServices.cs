@@ -33,6 +33,8 @@ public sealed class AppServices : IDisposable
     public required InstallationRegistry Registry { get; init; }
     public required InstallationVerifier Verifier { get; init; }
     public required UpdateChecker UpdateChecker { get; init; }
+    public required ProtonManager ProtonManager { get; init; }
+    public required UmuRunner UmuRunner { get; init; }
 
     public static async Task<AppServices> CreateAsync(bool verbose, CancellationToken cancellationToken)
     {
@@ -73,6 +75,8 @@ public sealed class AppServices : IDisposable
         var registry = new InstallationRegistry(registryPath);
         var verifier = new InstallationVerifier(registry, platform);
         var updateChecker = new UpdateChecker(httpClient);
+        var protonManager = new ProtonManager(downloader, platform);
+        var umuRunner = new UmuRunner(toolManager, protonManager, processRunner);
 
         return new AppServices
         {
@@ -91,6 +95,8 @@ public sealed class AppServices : IDisposable
             Registry = registry,
             Verifier = verifier,
             UpdateChecker = updateChecker,
+            ProtonManager = protonManager,
+            UmuRunner = umuRunner,
         };
     }
 

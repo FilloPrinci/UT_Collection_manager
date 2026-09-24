@@ -1,3 +1,4 @@
+using System.Formats.Tar;
 using UTLauncher.Core.Download;
 using UTLauncher.Core.Manifest;
 using UTLauncher.Core.Platform;
@@ -31,8 +32,22 @@ public sealed class ToolManager(Downloader downloader, IPlatform platform)
         var toolDirectory = Path.Combine(platform.GetRootDirectory(), "tools", kind.ToString().ToLowerInvariant());
         var destinationPath = Path.Combine(toolDirectory, platformFile.Exe);
 
-        var request = new DownloadRequest([platformFile.Url!], destinationPath, platformFile.Sha256!);
-        await downloader.DownloadAsync(request, progress, cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(platformFile.ArchiveEntry))
+        {
+            var request = new DownloadRequest([platformFile.Url!], destinationPath, platformFile.Sha256!);
+            await downloader.DownloadAsync(request, progress, cancellationToken).ConfigureAwait(false);
+        }
+        else if (!File.Exists(destinationPath))
+        {
+            // Url points to a tar archive (verified whole, by its own hash) that just wraps the
+            // real executable: download it to a throwaway staging file, then pull out the one
+            // entry we need and discard the rest.
+            var archivePath = destinationPath + ".archive";
+            var request = new DownloadRequest([platformFile.Url!], archivePath, platformFile.Sha256!);
+            await downloader.DownloadAsync(request, progress, cancellationToken).ConfigureAwait(false);
+            ExtractArchiveEntry(archivePath, platformFile.ArchiveEntry, destinationPath);
+            File.Delete(archivePath);
+        }
 
         MakeExecutableOnUnix(destinationPath);
 
@@ -43,6 +58,27 @@ public sealed class ToolManager(Downloader downloader, IPlatform platform)
         }
 
         return destinationPath;
+    }
+
+    private static void ExtractArchiveEntry(string archivePath, string entryName, string destinationPath)
+    {
+        using var archiveStream = File.OpenRead(archivePath);
+        using var tarReader = new TarReader(archiveStream);
+
+        while (tarReader.GetNextEntry() is { } entry)
+        {
+            if (entry.EntryType is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile) ||
+                entry.Name != entryName)
+            {
+                continue;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+            entry.ExtractToFile(destinationPath, overwrite: true);
+            return;
+        }
+
+        throw new ToolNotConfiguredException($"Entry '{entryName}' not found inside archive '{archivePath}'.");
     }
 
     private async Task EnsureExtraFileAvailableAsync(
@@ -81,6 +117,8 @@ public sealed class ToolManager(Downloader downloader, IPlatform platform)
     {
         ExternalToolKind.Unshield => manifest.Tools?.Unshield
             ?? throw new ToolNotConfiguredException("Section tools.unshield missing from the manifest."),
+        ExternalToolKind.Umu => manifest.Tools?.Umu
+            ?? throw new ToolNotConfiguredException("Section tools.umu missing from the manifest."),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
     };
 

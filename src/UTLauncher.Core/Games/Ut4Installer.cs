@@ -6,17 +6,19 @@ using UTLauncher.Core.InstallRegistry;
 using UTLauncher.Core.Manifest;
 using UTLauncher.Core.Platform;
 using UTLauncher.Core.Tasks;
+using UTLauncher.Core.Tools;
 
 namespace UTLauncher.Core.Games;
 
 /// <summary>
-/// Installs UT4 (2017 pre-alpha, UT4ever build v1.1.0) on Windows, per SPEC.md §6.3. Logic
-/// derived from utshakka/ut4installer's documented behavior, reimplemented from the spec (that
-/// repo has no explicit license: no code is copied from it).
+/// Installs UT4 (2017 pre-alpha, UT4ever build v1.1.0) on Windows and Linux, per SPEC.md §6.3.
+/// Logic derived from utshakka/ut4installer's documented behavior, reimplemented from the spec
+/// (that repo has no explicit license: no code is copied from it).
 /// </summary>
 public sealed class Ut4Installer(
     Downloader downloader,
     WindowsDependencyInstaller windowsDependencyInstaller,
+    UmuRunner umuRunner,
     InstallationRegistry registry,
     IPlatform platform,
     ILogger<Ut4Installer> logger)
@@ -24,16 +26,12 @@ public sealed class Ut4Installer(
     private const string InstallInfoSourceLocation = @"C:\Generic\Install\Path";
 
     public async Task<InstallationRecord> InstallAsync(
+        Manifest.Manifest manifest,
         GameEntry game,
         string destination,
         IProgress<TaskProgress>? progress,
         CancellationToken cancellationToken)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            throw new InvalidOperationException("UT4 can currently only be installed on Windows.");
-        }
-
         destination = Path.GetFullPath(destination);
         ValidateDestination(destination);
         EnsureEnoughDiskSpace(game, destination);
@@ -63,8 +61,9 @@ public sealed class Ut4Installer(
         // the UT4 install is large enough that disk space is a real concern (SPEC.md §6.3 step 1).
         File.Delete(gameZipPath);
 
-        WriteEngineIni(game, destination);
-        WriteInstallInfo(game, destination);
+        var prefixPath = platform.Id == "linux-x64"
+            ? await SetUpLinuxAsync(manifest, game, destination, progress, cancellationToken).ConfigureAwait(false)
+            : SetUpWindows(game, destination);
 
         await windowsDependencyInstaller.EnsureInstalledAsync(game, installerDirectory, progress, cancellationToken)
             .ConfigureAwait(false);
@@ -78,12 +77,75 @@ public sealed class Ut4Installer(
             {
                 ["package"] = packageResult.Sha256Hex,
             },
-            InstalledAtUtc: DateTimeOffset.UtcNow);
+            InstalledAtUtc: DateTimeOffset.UtcNow,
+            PrefixPath: prefixPath);
 
         await registry.UpsertAsync(record, cancellationToken).ConfigureAwait(false);
 
         logger.LogInformation("Installation of {GameName} complete", game.Name);
         return record;
+    }
+
+    // Windows: Engine.ini always lives under the real user's Documents folder, and InstallInfo's
+    // installLocation is the real (Windows-visible) install path. Returns null: there's no prefix.
+    private string? SetUpWindows(GameEntry game, string destination)
+    {
+        var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        var enginePath = Path.Combine(
+            documentsPath, "UnrealTournament", "Saved", "Config", "WindowsNoEditor", "Engine.ini");
+        WriteEngineIni(game, enginePath);
+        WriteInstallInfo(game, destination, installLocation: destination);
+        return null;
+    }
+
+    // Linux (SPEC.md §6.3, "Linux only"): the real game files stay in the user-chosen destination
+    // (same as every other game), and a Proton prefix only holds a "drive_c/Games/UnrealTournament"
+    // symlink pointing back at it - so Wine-side paths (Engine.ini's Documents, InstallInfo's
+    // installLocation) are always the same fixed "C:\Games\UnrealTournament", never the real path.
+    private async Task<string> SetUpLinuxAsync(
+        Manifest.Manifest manifest,
+        GameEntry game,
+        string destination,
+        IProgress<TaskProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        var prefixPath = Path.Combine(platform.GetRootDirectory(), "prefixes", game.Id);
+        var driveCGames = Path.Combine(prefixPath, "drive_c", "Games");
+        Directory.CreateDirectory(driveCGames);
+
+        var symlinkPath = Path.Combine(driveCGames, "UnrealTournament");
+        if (!Directory.Exists(symlinkPath) && !File.Exists(symlinkPath))
+        {
+            logger.LogInformation("Linking {SymlinkPath} -> {Destination}", symlinkPath, destination);
+            Directory.CreateSymbolicLink(symlinkPath, destination);
+        }
+
+        var windowsInstallPath = game.Launch?.GetValueOrDefault("linux-x64")?.WindowsInstallPath
+            ?? throw new InvalidOperationException($"Manifest is missing 'launch.linux-x64.windowsInstallPath' for game '{game.Id}'.");
+
+        var enginePath = Path.Combine(
+            prefixPath, "drive_c", "users", "steamuser", "Documents",
+            "UnrealTournament", "Saved", "Config", "WindowsNoEditor", "Engine.ini");
+        WriteEngineIni(game, enginePath);
+        WriteInstallInfo(game, destination, installLocation: windowsInstallPath);
+
+        var winetricksVerbs = game.Launch?.GetValueOrDefault("linux-x64")?.Winetricks ?? [];
+        foreach (var verb in winetricksVerbs)
+        {
+            logger.LogInformation("Running winetricks verb {Verb} via umu-run in prefix {PrefixPath}", verb, prefixPath);
+            progress?.Report(TaskProgress.Indeterminate($"Installing {verb} into the Proton prefix"));
+
+            var result = await umuRunner
+                .RunAsync(manifest, prefixPath, ["winetricks", verb], workingDirectory: null, progress, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException($"winetricks verb '{verb}' failed (exit code {result.ExitCode}).");
+            }
+        }
+
+        return prefixPath;
     }
 
     // SPEC.md §6.3 step 2: the game zip's own top-level folder is already "UnrealTournament", so
@@ -262,18 +324,15 @@ public sealed class Ut4Installer(
     }
 
     // SPEC.md §6.3 step 4: create Engine.ini with the manifest's master-server sections, or add
-    // only whichever ones are missing if the file already exists. Always under the user's
-    // Documents folder, regardless of where the game itself is installed (UE4 convention).
-    private void WriteEngineIni(GameEntry game, string destination)
+    // only whichever ones are missing if the file already exists. Always under the game's
+    // Documents folder (the caller resolves where that is per-platform), regardless of where the
+    // game itself is installed (UE4 convention).
+    private void WriteEngineIni(GameEntry game, string enginePath)
     {
         if (game.MasterServer is not { } masterServer)
         {
             throw new InvalidOperationException($"Manifest is missing 'masterServer' for game '{game.Id}'.");
         }
-
-        var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        var enginePath = Path.Combine(
-            documentsPath, "UnrealTournament", "Saved", "Config", "WindowsNoEditor", "Engine.ini");
 
         Directory.CreateDirectory(Path.GetDirectoryName(enginePath)!);
 
@@ -288,8 +347,10 @@ public sealed class Ut4Installer(
     }
 
     // SPEC.md §6.3 step 5: rewrite UT4UU's InstallInfo.bin (both manifest paths, relative to the
-    // install destination) with only sourceLocation/installLocation replaced.
-    private void WriteInstallInfo(GameEntry game, string destination)
+    // install destination) with only sourceLocation/installLocation replaced. On Windows
+    // installLocation is the real install path; on Linux it's always the prefix's fixed
+    // "C:\Games\UnrealTournament" symlink target, never the real destination.
+    private void WriteInstallInfo(GameEntry game, string destination, string installLocation)
     {
         if (game.Ut4uuInstallInfo is not { Count: > 0 } paths)
         {
@@ -305,7 +366,7 @@ public sealed class Ut4Installer(
                 continue;
             }
 
-            InstallInfoBinCodec.RewriteLocations(path, InstallInfoSourceLocation, destination);
+            InstallInfoBinCodec.RewriteLocations(path, InstallInfoSourceLocation, installLocation);
             logger.LogInformation("Wrote {Path}", path);
         }
     }

@@ -6,17 +6,26 @@ namespace UTLauncher.Core.Processes;
 
 public sealed class ProcessRunner(ILogger<ProcessRunner> logger)
 {
+    public Task<ProcessResult> RunAsync(
+        string fileName,
+        IReadOnlyList<string> arguments,
+        string? workingDirectory,
+        CancellationToken cancellationToken) =>
+        RunAsync(fileName, arguments, workingDirectory, environment: null, cancellationToken);
+
     public async Task<ProcessResult> RunAsync(
         string fileName,
         IReadOnlyList<string> arguments,
         string? workingDirectory,
+        IReadOnlyDictionary<string, string>? environment,
         CancellationToken cancellationToken)
     {
         logger.LogInformation(
-            "Running external process: {FileName} {Arguments} (cwd={WorkingDirectory})",
+            "Running external process: {FileName} {Arguments} (cwd={WorkingDirectory}, env={Environment})",
             fileName,
             string.Join(' ', arguments),
-            workingDirectory ?? Environment.CurrentDirectory);
+            workingDirectory ?? Environment.CurrentDirectory,
+            environment is null ? "(none)" : string.Join(' ', environment.Select(kv => $"{kv.Key}={kv.Value}")));
 
         var startInfo = new ProcessStartInfo
         {
@@ -30,6 +39,11 @@ public sealed class ProcessRunner(ILogger<ProcessRunner> logger)
         foreach (var argument in arguments)
         {
             startInfo.ArgumentList.Add(argument);
+        }
+
+        foreach (var (key, value) in environment ?? new Dictionary<string, string>())
+        {
+            startInfo.Environment[key] = value;
         }
 
         using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
