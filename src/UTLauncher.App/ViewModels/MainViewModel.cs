@@ -3,8 +3,10 @@ using System.Reflection;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using UTLauncher.App.Services;
 using UTLauncher.Core.Logging;
+using UTLauncher.Core.Updates;
 
 namespace UTLauncher.App.ViewModels;
 
@@ -33,6 +35,9 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial string? CopyLogsFeedback { get; set; }
 
+    [ObservableProperty]
+    public partial string? AvailableUpdateVersion { get; set; }
+
     /// <summary>Design-time only constructor (see MainWindow.axaml's Design.DataContext).</summary>
     public MainViewModel()
     {
@@ -59,6 +64,47 @@ public partial class MainViewModel : ViewModelBase
         }
 
         _ = RefreshStatusesAsync();
+        _ = CheckForUpdateAsync();
+    }
+
+    private async Task CheckForUpdateAsync()
+    {
+        if (_services is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = await _services.UpdateChecker.CheckAsync(AppVersion, CancellationToken.None).ConfigureAwait(false);
+            if (result.IsUpdateAvailable)
+            {
+                Dispatcher.UIThread.Post(() => AvailableUpdateVersion = result.LatestVersion);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Non-critical background check (e.g. offline, GitHub unreachable): log and move on,
+            // never surface this as a user-facing error.
+            _services.LoggerFactory.CreateLogger<MainViewModel>().LogDebug(ex, "Update check failed");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenReleasesPage()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = UpdateChecker.ReleasesPageUrl,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            _services?.LoggerFactory.CreateLogger<MainViewModel>().LogWarning(ex, "Could not open the releases page");
+        }
     }
 
     private void OnLogEntryWritten(object? sender, LogEntry entry) => Dispatcher.UIThread.Post(() =>

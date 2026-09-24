@@ -46,6 +46,25 @@
                         <TextBlock Text="{Binding StartupError}" TextWrapping="Wrap" />
                     </Border>
 
+                    <Border Background="#332B7CD3"
+                            Padding="12"
+                            CornerRadius="6"
+                            IsVisible="{Binding AvailableUpdateVersion, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="Wrap">
+                                <Run Text="A new launcher version (" />
+                                <Run Text="{Binding AvailableUpdateVersion}" FontWeight="Bold" />
+                                <Run Text=") is available." />
+                            </TextBlock>
+                            <Button DockPanel.Dock="Right"
+                                    Content="Open download page"
+                                    HorizontalAlignment="Right"
+                                    Command="{Binding OpenReleasesPageCommand}" />
+                        </DockPanel>
+                    </Border>
+
                     <ItemsControl ItemsSource="{Binding Games}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="vm:GameViewModel">

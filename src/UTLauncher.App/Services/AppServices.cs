@@ -8,6 +8,7 @@ using UTLauncher.Core.Manifest;
 using UTLauncher.Core.Platform;
 using UTLauncher.Core.Processes;
 using UTLauncher.Core.Tools;
+using UTLauncher.Core.Updates;
 
 namespace UTLauncher.App.Services;
 
@@ -31,6 +32,7 @@ public sealed class AppServices : IDisposable
     public required WindowsDependencyInstaller WindowsDependencyInstaller { get; init; }
     public required InstallationRegistry Registry { get; init; }
     public required InstallationVerifier Verifier { get; init; }
+    public required UpdateChecker UpdateChecker { get; init; }
 
     public static async Task<AppServices> CreateAsync(bool verbose, CancellationToken cancellationToken)
     {
@@ -70,6 +72,7 @@ public sealed class AppServices : IDisposable
         var registryPath = Path.Combine(platform.GetRootDirectory(), "installations.json");
         var registry = new InstallationRegistry(registryPath);
         var verifier = new InstallationVerifier(registry, platform);
+        var updateChecker = new UpdateChecker(httpClient);
 
         return new AppServices
         {
@@ -87,6 +90,7 @@ public sealed class AppServices : IDisposable
             WindowsDependencyInstaller = windowsDependencyInstaller,
             Registry = registry,
             Verifier = verifier,
+            UpdateChecker = updateChecker,
         };
     }
 
