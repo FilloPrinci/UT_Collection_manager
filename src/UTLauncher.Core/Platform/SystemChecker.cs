@@ -2,17 +2,23 @@ namespace UTLauncher.Core.Platform;
 
 /// <summary>
 /// Runs the system checks described in SPEC.md §5.1: disk space, and (on Linux) whether the
-/// optional libraries UT99/UT2004 prefer over their bundled copies are already present, with a
-/// copyable install command for the detected distro when they aren't. Shared by the CLI's
-/// `doctor` command and the App's system-check view so both report the same thing.
+/// libraries UT2004 prefers over its own bundled copies are already present - OpenAL doubles as a
+/// hard requirement for UT99, whose patch bundles no fallback for it - with a copyable install
+/// command for the detected distro when they aren't. Shared by the CLI's `doctor` command and the
+/// App's system-check view so both report the same thing.
 /// </summary>
 public sealed class SystemChecker(SystemLibraryLocator libraryLocator)
 {
-    private static readonly (string LibraryName, string DisplayName)[] OptionalLibraries =
+    // UT2004's Linux patch bundles its own copies of all three (preferred only if the system
+    // doesn't have them - see Ut2004Installer.ApplyLibraryPreferenceFixesAsync). UT99's patch
+    // bundles none of them: for OpenAL specifically, that makes it a hard requirement for UT99
+    // (no fallback - ALAudio.so simply fails to load without it, "Can't find file for package
+    // ALAudio" at startup), not just a "nice to have" like it is for UT2004.
+    private static readonly (string LibraryName, string DisplayName, bool RequiredForUt99)[] OptionalLibraries =
     [
-        ("libopenal.so.1", "OpenAL"),
-        ("libSDL3.so.0", "SDL3"),
-        ("libomp.so.5", "libomp"),
+        ("libopenal.so.1", "OpenAL", true),
+        ("libSDL3.so.0", "SDL3", false),
+        ("libomp.so.5", "libomp", false),
     ];
 
     public async Task<IReadOnlyList<SystemCheckResult>> RunAsync(CancellationToken cancellationToken)
@@ -26,7 +32,7 @@ public sealed class SystemChecker(SystemLibraryLocator libraryLocator)
 
         var distroId = LinuxDistroDetector.DetectId();
 
-        foreach (var (libraryName, displayName) in OptionalLibraries)
+        foreach (var (libraryName, displayName, requiredForUt99) in OptionalLibraries)
         {
             var path = await libraryLocator.FindAsync(libraryName, cancellationToken).ConfigureAwait(false);
 
@@ -40,14 +46,18 @@ public sealed class SystemChecker(SystemLibraryLocator libraryLocator)
 
             if (path is not null)
             {
-                results.Add(new SystemCheckResult(
-                    displayName, true, $"Found on the system ({path}) - UT99/UT2004 will prefer it."));
+                var foundMessage = requiredForUt99
+                    ? $"Found on the system ({path}) - required for UT99; UT2004 will prefer it over its own bundled copy."
+                    : $"Found on the system ({path}) - UT2004 will prefer it over its own bundled copy.";
+                results.Add(new SystemCheckResult(displayName, true, foundMessage));
                 continue;
             }
 
             var hint = InstallHintFor(distroId, libraryName);
-            results.Add(new SystemCheckResult(
-                displayName, false, "Not found on the system - UT99/UT2004 will use the copy bundled with the patch.", hint));
+            var missingMessage = requiredForUt99
+                ? "Not found on the system - required to run UT99 (no bundled fallback); UT2004 has its own bundled copy."
+                : "Not found on the system - UT2004 will use its own bundled copy.";
+            results.Add(new SystemCheckResult(displayName, false, missingMessage, hint));
         }
 
         return results;
