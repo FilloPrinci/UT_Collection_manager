@@ -23,8 +23,7 @@ public partial class GameViewModel : ViewModelBase
         _game = game;
         _services = services;
         _folderPicker = folderPicker;
-        var defaultRoot = services.DefaultInstallPathFor(game.Id.ToUpperInvariant());
-        InstallPath = Id == "ut4" ? Path.Combine(defaultRoot, SubfolderName) : defaultRoot;
+        InstallPath = ComputeDefaultInstallPath();
         IsSupported = SupportedGameIds.Contains(game.Id);
         StatusText = IsSupported ? "Not installed" : "Not available yet";
     }
@@ -33,6 +32,12 @@ public partial class GameViewModel : ViewModelBase
     // game zip's own top-level folder); UT99/UT2004 accept any name, so this just keeps their
     // folder distinguishable when several games share the same install root.
     private string SubfolderName => Id == "ut4" ? "UnrealTournament" : Id.ToUpperInvariant();
+
+    private string ComputeDefaultInstallPath()
+    {
+        var defaultRoot = _services.DefaultInstallPathFor(Id.ToUpperInvariant());
+        return Id == "ut4" ? Path.Combine(defaultRoot, SubfolderName) : defaultRoot;
+    }
 
     public string Id => _game.Id;
 
@@ -44,9 +49,9 @@ public partial class GameViewModel : ViewModelBase
 
     public bool HasAccountRegistration => !string.IsNullOrWhiteSpace(_game.AccountRegistrationUrl);
 
-    // Only UT99 has a per-game settings action right now (the WASD key-binding fix). The gear
-    // button itself stays hidden for other games rather than showing an empty menu.
-    public bool HasSettingsActions => Id == "ut99";
+    // Only UT99 needs the WASD key-binding fix; the gear menu's Uninstall entry applies to
+    // every installed game.
+    public bool HasWasdFix => Id == "ut99";
 
     [ObservableProperty]
     public partial string StatusText { get; set; }
@@ -55,17 +60,20 @@ public partial class GameViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
     [NotifyCanExecuteChangedFor(nameof(LaunchCommand))]
     [NotifyCanExecuteChangedFor(nameof(ApplyWasdMovementCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UninstallCommand))]
     public partial bool IsInstalled { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelInstallCommand))]
     [NotifyCanExecuteChangedFor(nameof(LaunchCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UninstallCommand))]
     public partial bool IsBusy { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
     [NotifyCanExecuteChangedFor(nameof(LaunchCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UninstallCommand))]
     public partial bool IsLaunching { get; set; }
 
     [ObservableProperty]
@@ -82,6 +90,9 @@ public partial class GameViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial string? SettingsFeedback { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsConfirmingUninstall { get; set; }
 
     public async Task RefreshStatusAsync()
     {
@@ -304,6 +315,43 @@ public partial class GameViewModel : ViewModelBase
     {
         await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(true);
         SettingsFeedback = null;
+    }
+
+    [RelayCommand]
+    private void RequestUninstall() => IsConfirmingUninstall = true;
+
+    [RelayCommand]
+    private void CancelUninstall() => IsConfirmingUninstall = false;
+
+    private bool CanUninstall() => IsInstalled && !IsBusy && !IsLaunching;
+
+    [RelayCommand(CanExecute = nameof(CanUninstall))]
+    private async Task UninstallAsync()
+    {
+        IsConfirmingUninstall = false;
+        IsBusy = true;
+
+        try
+        {
+            var uninstaller = new GameUninstaller(_services.Registry, _services.LoggerFactory.CreateLogger<GameUninstaller>());
+            await uninstaller.UninstallAsync(Id, CancellationToken.None).ConfigureAwait(true);
+
+            IsInstalled = false;
+            StatusText = IsSupported ? "Not installed" : "Not available yet";
+            InstallPath = ComputeDefaultInstallPath();
+            SettingsFeedback = "Uninstalled.";
+        }
+        catch (Exception ex)
+        {
+            _services.LoggerFactory.CreateLogger<GameViewModel>().LogError(ex, "Failed to uninstall {GameId}", Id);
+            SettingsFeedback = $"Uninstall failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        _ = ClearSettingsFeedbackAfterDelayAsync();
     }
 
     private sealed class UiTaskProgress(GameViewModel owner) : IProgress<TaskProgress>

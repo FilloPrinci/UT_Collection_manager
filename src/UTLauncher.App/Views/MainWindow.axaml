@@ -88,11 +88,15 @@
                                                 </Button>
                                                 <Button Content="&#9881;"
                                                         ToolTip.Tip="Game settings"
-                                                        IsVisible="{Binding HasSettingsActions}">
+                                                        IsVisible="{Binding IsInstalled}">
                                                     <Button.Flyout>
                                                         <MenuFlyout Placement="BottomEdgeAlignedRight">
                                                             <MenuItem Header="Use WASD movement"
-                                                                      Command="{Binding ApplyWasdMovementCommand}" />
+                                                                      Command="{Binding ApplyWasdMovementCommand}"
+                                                                      IsVisible="{Binding HasWasdFix}" />
+                                                            <Separator IsVisible="{Binding HasWasdFix}" />
+                                                            <MenuItem Header="Uninstall..."
+                                                                      Command="{Binding RequestUninstallCommand}" />
                                                         </MenuFlyout>
                                                     </Button.Flyout>
                                                 </Button>
@@ -107,6 +111,25 @@
                                                          Height="6" />
                                             <TextBlock Text="{Binding ProgressText}" FontSize="12" Opacity="0.7" />
                                         </StackPanel>
+
+                                        <Border Background="#33FF3333"
+                                                Padding="10"
+                                                CornerRadius="6"
+                                                IsVisible="{Binding IsConfirmingUninstall}">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Left"
+                                                           Text="Delete this installation and all its files? This cannot be undone."
+                                                           VerticalAlignment="Center"
+                                                           TextWrapping="Wrap" />
+                                                <StackPanel DockPanel.Dock="Right"
+                                                            Orientation="Horizontal"
+                                                            Spacing="8"
+                                                            HorizontalAlignment="Right">
+                                                    <Button Content="Cancel" Command="{Binding CancelUninstallCommand}" />
+                                                    <Button Content="Delete" Command="{Binding UninstallCommand}" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
 
                                         <TextBlock Text="{Binding InstallPath}" FontSize="11" Opacity="0.5" />
                                         <TextBlock Text="{Binding SettingsFeedback}"
