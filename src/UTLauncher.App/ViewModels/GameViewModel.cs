@@ -1,3 +1,4 @@
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -48,6 +49,27 @@ public partial class GameViewModel : ViewModelBase
     public bool IsSupported { get; }
 
     public bool HasAccountRegistration => !string.IsNullOrWhiteSpace(_game.AccountRegistrationUrl);
+
+    // We don't bundle the games' own trademarked logos in this repo/app - instead, once a game
+    // is installed, its icon is read straight from a logo file already sitting inside the
+    // user's own (hash-verified, legitimately obtained) install folder. Until then, or if no
+    // such file is known/found (UT4), IconFallbackText is shown in a plain generated badge.
+    private static readonly Dictionary<string, string> LogoRelativePathByGameId = new()
+    {
+        ["ut99"] = "Help/UnrealTournamentLogo.bmp",
+        ["ut2004"] = "Help/UT2004Logo.bmp",
+    };
+
+    [ObservableProperty]
+    public partial Bitmap? IconBitmap { get; set; }
+
+    public string IconFallbackText => Id switch
+    {
+        "ut99" => "99",
+        "ut2004" => "'04",
+        "ut4" => "UT4",
+        _ => "?",
+    };
 
     // Only UT99 needs the WASD key-binding fix; the gear menu's Uninstall entry applies to
     // every installed game.
@@ -132,7 +154,35 @@ public partial class GameViewModel : ViewModelBase
             StatusText = record.VersionCode == VersionCode
                 ? $"Installed ({record.VersionCode})"
                 : $"Installed ({record.VersionCode}) - manifest now has {VersionCode}";
+            TryLoadIcon();
         });
+    }
+
+    private void TryLoadIcon()
+    {
+        if (!IsInstalled || !LogoRelativePathByGameId.TryGetValue(Id, out var relativeLogoPath))
+        {
+            IconBitmap = null;
+            return;
+        }
+
+        var fullPath = Path.Combine(InstallPath, relativeLogoPath.Replace('/', Path.DirectorySeparatorChar));
+        if (!File.Exists(fullPath))
+        {
+            IconBitmap = null;
+            return;
+        }
+
+        try
+        {
+            using var stream = File.OpenRead(fullPath);
+            IconBitmap = new Bitmap(stream);
+        }
+        catch (Exception ex)
+        {
+            _services.LoggerFactory.CreateLogger<GameViewModel>().LogDebug(ex, "Could not load icon for {GameId}", Id);
+            IconBitmap = null;
+        }
     }
 
     private bool CanInstall() => IsSupported && !IsBusy && !IsLaunching && (!IsInstalled || NeedsUpdate);
@@ -173,6 +223,7 @@ public partial class GameViewModel : ViewModelBase
                 InstalledVersionCode = record.VersionCode;
                 StatusText = $"Installed ({record.VersionCode})";
                 InstallPath = record.InstallPath;
+                TryLoadIcon();
             });
         }
         catch (OperationCanceledException)
@@ -366,6 +417,7 @@ public partial class GameViewModel : ViewModelBase
             InstalledVersionCode = null;
             StatusText = IsSupported ? "Not installed" : "Not available yet";
             InstallPath = ComputeDefaultInstallPath();
+            IconBitmap = null;
             SettingsFeedback = "Uninstalled.";
         }
         catch (Exception ex)
