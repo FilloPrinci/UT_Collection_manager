@@ -63,6 +63,7 @@ jobs:
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:DebugType=None -p:Version=${{ steps.version.outputs.version }} -o publish/linux-x64/utlauncher-linux-x64/cli
           find publish/linux-x64 -name "*.pdb" -delete
+          cp src/UTLauncher.App/Assets/app-icon.png publish/linux-x64/utlauncher-linux-x64/app/icon.png
           cp packaging/linux/install.sh publish/linux-x64/utlauncher-linux-x64/install.sh
           cp README.md publish/linux-x64/utlauncher-linux-x64/README.md
           chmod +x publish/linux-x64/utlauncher-linux-x64/install.sh

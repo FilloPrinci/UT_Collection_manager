@@ -37,7 +37,7 @@ Type=Application
 Name=UT Launcher
 Comment=Launcher for Unreal Tournament 99, 2004 and 4
 Exec=${INSTALL_DIR}/UTLauncher.App
-Icon=applications-games
+Icon=${INSTALL_DIR}/icon.png
 Terminal=false
 Categories=Game;
 EOF

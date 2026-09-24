@@ -8,7 +8,7 @@
         mc:Ignorable="d" d:DesignWidth="960" d:DesignHeight="640"
         x:Class="UTLauncher.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/app-icon.ico"
         Title="UT Launcher"
         Width="960" Height="640">
 
