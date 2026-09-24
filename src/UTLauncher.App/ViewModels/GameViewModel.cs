@@ -44,12 +44,17 @@ public partial class GameViewModel : ViewModelBase
 
     public bool HasAccountRegistration => !string.IsNullOrWhiteSpace(_game.AccountRegistrationUrl);
 
+    // Only UT99 has a per-game settings action right now (the WASD key-binding fix). The gear
+    // button itself stays hidden for other games rather than showing an empty menu.
+    public bool HasSettingsActions => Id == "ut99";
+
     [ObservableProperty]
     public partial string StatusText { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
     [NotifyCanExecuteChangedFor(nameof(LaunchCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ApplyWasdMovementCommand))]
     public partial bool IsInstalled { get; set; }
 
     [ObservableProperty]
@@ -74,6 +79,9 @@ public partial class GameViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial string InstallPath { get; set; }
+
+    [ObservableProperty]
+    public partial string? SettingsFeedback { get; set; }
 
     public async Task RefreshStatusAsync()
     {
@@ -269,6 +277,33 @@ public partial class GameViewModel : ViewModelBase
         {
             _services.LoggerFactory.CreateLogger<GameViewModel>().LogWarning(ex, "Could not open registration page {Url}", url);
         }
+    }
+
+    private bool CanApplyWasdMovement() => IsInstalled;
+
+    [RelayCommand(CanExecute = nameof(CanApplyWasdMovement))]
+    private async Task ApplyWasdMovementAsync()
+    {
+        try
+        {
+            var helper = new Ut99KeyBindingHelper();
+            await helper.ApplyWasdMovementAsync(_game, _services.Platform, InstallPath, CancellationToken.None)
+                .ConfigureAwait(true);
+            SettingsFeedback = "Done - W/A/S/D now move/strafe. Restart the game if it's running.";
+        }
+        catch (Exception ex)
+        {
+            _services.LoggerFactory.CreateLogger<GameViewModel>().LogWarning(ex, "Failed to apply WASD movement for {GameId}", Id);
+            SettingsFeedback = $"Failed: {ex.Message}";
+        }
+
+        _ = ClearSettingsFeedbackAfterDelayAsync();
+    }
+
+    private async Task ClearSettingsFeedbackAfterDelayAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(true);
+        SettingsFeedback = null;
     }
 
     private sealed class UiTaskProgress(GameViewModel owner) : IProgress<TaskProgress>

@@ -86,6 +86,16 @@
                                                         </MultiBinding>
                                                     </Button.IsVisible>
                                                 </Button>
+                                                <Button Content="&#9881;"
+                                                        ToolTip.Tip="Game settings"
+                                                        IsVisible="{Binding HasSettingsActions}">
+                                                    <Button.Flyout>
+                                                        <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                                            <MenuItem Header="Use WASD movement"
+                                                                      Command="{Binding ApplyWasdMovementCommand}" />
+                                                        </MenuFlyout>
+                                                    </Button.Flyout>
+                                                </Button>
                                             </StackPanel>
                                         </Grid>
 
@@ -99,6 +109,11 @@
                                         </StackPanel>
 
                                         <TextBlock Text="{Binding InstallPath}" FontSize="11" Opacity="0.5" />
+                                        <TextBlock Text="{Binding SettingsFeedback}"
+                                                   FontSize="11"
+                                                   Opacity="0.8"
+                                                   TextWrapping="Wrap"
+                                                   IsVisible="{Binding SettingsFeedback, Converter={x:Static conv:ObjectConverters.IsNotNull}}" />
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
