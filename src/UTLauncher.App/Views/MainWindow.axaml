@@ -65,9 +65,9 @@
                                                         Orientation="Horizontal"
                                                         Spacing="8"
                                                         VerticalAlignment="Center">
-                                                <Button Content="Install"
+                                                <Button Content="{Binding InstallButtonLabel}"
                                                         Command="{Binding InstallCommand}"
-                                                        IsVisible="{Binding !IsInstalled}" />
+                                                        IsVisible="{Binding ShowInstallButton}" />
                                                 <Button Content="Cancel"
                                                         Command="{Binding CancelInstallCommand}"
                                                         IsVisible="{Binding IsBusy}" />

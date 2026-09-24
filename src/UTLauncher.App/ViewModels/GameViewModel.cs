@@ -61,7 +61,26 @@ public partial class GameViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(LaunchCommand))]
     [NotifyCanExecuteChangedFor(nameof(ApplyWasdMovementCommand))]
     [NotifyCanExecuteChangedFor(nameof(UninstallCommand))]
+    [NotifyPropertyChangedFor(nameof(NeedsUpdate))]
+    [NotifyPropertyChangedFor(nameof(ShowInstallButton))]
+    [NotifyPropertyChangedFor(nameof(InstallButtonLabel))]
     public partial bool IsInstalled { get; set; }
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
+    [NotifyPropertyChangedFor(nameof(NeedsUpdate))]
+    [NotifyPropertyChangedFor(nameof(ShowInstallButton))]
+    [NotifyPropertyChangedFor(nameof(InstallButtonLabel))]
+    public partial string? InstalledVersionCode { get; set; }
+
+    // True once RefreshStatusAsync (or a completed install) confirms the installed version code
+    // no longer matches what the manifest currently ships, so a re-run of the same install flow
+    // is offered as "Update" instead of hiding the button entirely.
+    public bool NeedsUpdate => IsInstalled && InstalledVersionCode is not null && InstalledVersionCode != VersionCode;
+
+    public bool ShowInstallButton => !IsInstalled || NeedsUpdate;
+
+    public string InstallButtonLabel => NeedsUpdate ? "Update" : "Install";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
@@ -102,11 +121,13 @@ public partial class GameViewModel : ViewModelBase
             if (record is null)
             {
                 IsInstalled = false;
+                InstalledVersionCode = null;
                 StatusText = IsSupported ? "Not installed" : "Not available yet";
                 return;
             }
 
             InstallPath = record.InstallPath;
+            InstalledVersionCode = record.VersionCode;
             IsInstalled = true;
             StatusText = record.VersionCode == VersionCode
                 ? $"Installed ({record.VersionCode})"
@@ -114,12 +135,16 @@ public partial class GameViewModel : ViewModelBase
         });
     }
 
-    private bool CanInstall() => IsSupported && !IsBusy && !IsLaunching;
+    private bool CanInstall() => IsSupported && !IsBusy && !IsLaunching && (!IsInstalled || NeedsUpdate);
 
     [RelayCommand(CanExecute = nameof(CanInstall))]
     private async Task InstallAsync()
     {
-        if (_folderPicker is not null)
+        // Updating an existing install re-runs the same installer in place against the same
+        // InstallPath (Downloader skips files that already match the manifest hash, and
+        // extraction overwrites): picking a different folder here would silently leave the old
+        // install untouched elsewhere instead of updating it, so only prompt for a fresh install.
+        if (!IsInstalled && _folderPicker is not null)
         {
             var chosenRoot = await _folderPicker
                 .PickFolderAsync($"Choose where to install {Name}", Path.GetDirectoryName(InstallPath))
@@ -145,6 +170,7 @@ public partial class GameViewModel : ViewModelBase
             Dispatcher.UIThread.Post(() =>
             {
                 IsInstalled = true;
+                InstalledVersionCode = record.VersionCode;
                 StatusText = $"Installed ({record.VersionCode})";
                 InstallPath = record.InstallPath;
             });
@@ -337,6 +363,7 @@ public partial class GameViewModel : ViewModelBase
             await uninstaller.UninstallAsync(Id, CancellationToken.None).ConfigureAwait(true);
 
             IsInstalled = false;
+            InstalledVersionCode = null;
             StatusText = IsSupported ? "Not installed" : "Not available yet";
             InstallPath = ComputeDefaultInstallPath();
             SettingsFeedback = "Uninstalled.";
