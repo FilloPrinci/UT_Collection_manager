@@ -84,7 +84,8 @@
                                                     Background="{DynamicResource SystemBaseLowColor}">
                                                 <Panel>
                                                     <Image Source="{Binding IconBitmap}"
-                                                           Stretch="UniformToFill"
+                                                           Stretch="Uniform"
+                                                           Margin="8"
                                                            IsVisible="{Binding IconBitmap, Converter={x:Static conv:ObjectConverters.IsNotNull}}" />
                                                     <TextBlock Text="{Binding IconFallbackText}"
                                                                FontWeight="Bold"

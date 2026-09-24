@@ -56,8 +56,12 @@ public partial class GameViewModel : ViewModelBase
     // such file is known/found (UT4), IconFallbackText is shown in a plain generated badge.
     private static readonly Dictionary<string, string> LogoRelativePathByGameId = new()
     {
-        ["ut99"] = "Help/UnrealTournamentLogo.bmp",
-        ["ut2004"] = "Help/UT2004Logo.bmp",
+        // "Help/Unreal.ico" - despite the shared generic filename, each game's installer ships
+        // its own distinct icon there (verified: UT99's is a bronze crest, UT2004's a blue/gold
+        // disc), and it's a proper small square icon rather than the wide splash-screen banners
+        // also present (UnrealTournamentLogo.bmp / UT2004Logo.bmp).
+        ["ut99"] = "Help/Unreal.ico",
+        ["ut2004"] = "Help/Unreal.ico",
     };
 
     [ObservableProperty]
