@@ -19,7 +19,22 @@ public sealed class ConsoleProgressReporter : IProgress<TaskProgress>
         _lastStepText = value.StepText;
         _lastPercentBucket = bucket;
 
-        var percentText = value.PercentComplete.HasValue ? $" ({value.PercentComplete.Value:0}%)" : string.Empty;
-        Console.WriteLine($"{value.StepText}{percentText}");
+        if (value.PercentComplete is not { } percent)
+        {
+            Console.WriteLine(value.StepText);
+            return;
+        }
+
+        var speedText = value.BytesPerSecond is > 0 ? $", {FormatSpeed(value.BytesPerSecond.Value)}" : string.Empty;
+        Console.WriteLine($"{value.StepText} ({percent:0}%{speedText})");
+    }
+
+    private static string FormatSpeed(double bytesPerSecond)
+    {
+        const double kb = 1024;
+        const double mb = kb * 1024;
+        return bytesPerSecond >= mb
+            ? $"{bytesPerSecond / mb:0.#} MB/s"
+            : $"{bytesPerSecond / kb:0.#} KB/s";
     }
 }

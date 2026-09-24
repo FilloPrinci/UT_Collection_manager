@@ -446,7 +446,30 @@ public partial class GameViewModel : ViewModelBase
         {
             owner.IsIndeterminate = value.IsIndeterminate;
             owner.ProgressPercent = value.PercentComplete ?? owner.ProgressPercent;
-            owner.ProgressText = value.StepText;
+            owner.ProgressText = FormatProgressText(value);
         });
+
+        // Downloads report a known percentage and transfer speed (TaskProgress.BytesPerSecond);
+        // other steps (hash verification, extraction without a known entry count) don't have one
+        // to show, so they just fall back to the plain step text.
+        private static string FormatProgressText(TaskProgress value)
+        {
+            if (value.PercentComplete is not { } percent)
+            {
+                return value.StepText;
+            }
+
+            var speed = value.BytesPerSecond is > 0 ? $" ({FormatSpeed(value.BytesPerSecond.Value)})" : string.Empty;
+            return $"{value.StepText} — {percent:0.#}%{speed}";
+        }
+
+        private static string FormatSpeed(double bytesPerSecond)
+        {
+            const double kb = 1024;
+            const double mb = kb * 1024;
+            return bytesPerSecond >= mb
+                ? $"{bytesPerSecond / mb:0.#} MB/s"
+                : $"{bytesPerSecond / kb:0.#} KB/s";
+        }
     }
 }
