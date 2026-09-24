@@ -30,6 +30,7 @@ public sealed class AppServices : IDisposable
     public required ToolManager ToolManager { get; init; }
     public required SystemLibraryLocator SystemLibraryLocator { get; init; }
     public required WindowsDependencyInstaller WindowsDependencyInstaller { get; init; }
+    public required LinuxDependencyInstaller LinuxDependencyInstaller { get; init; }
     public required InstallationRegistry Registry { get; init; }
     public required InstallationVerifier Verifier { get; init; }
     public required UpdateChecker UpdateChecker { get; init; }
@@ -71,6 +72,7 @@ public sealed class AppServices : IDisposable
         var toolManager = new ToolManager(downloader, platform);
         var systemLibraryLocator = new SystemLibraryLocator(processRunner);
         var windowsDependencyInstaller = new WindowsDependencyInstaller(downloader, processRunner, loggerFactory.CreateLogger<WindowsDependencyInstaller>());
+        var linuxDependencyInstaller = new LinuxDependencyInstaller(systemLibraryLocator, processRunner, loggerFactory.CreateLogger<LinuxDependencyInstaller>());
         var registryPath = Path.Combine(platform.GetRootDirectory(), "installations.json");
         var registry = new InstallationRegistry(registryPath);
         var verifier = new InstallationVerifier(registry, platform);
@@ -92,6 +94,7 @@ public sealed class AppServices : IDisposable
             ToolManager = toolManager,
             SystemLibraryLocator = systemLibraryLocator,
             WindowsDependencyInstaller = windowsDependencyInstaller,
+            LinuxDependencyInstaller = linuxDependencyInstaller,
             Registry = registry,
             Verifier = verifier,
             UpdateChecker = updateChecker,

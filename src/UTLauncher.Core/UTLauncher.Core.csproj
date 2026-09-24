@@ -18,4 +18,8 @@
     <EmbeddedResource Include="..\..\manifest\manifest.json" LogicalName="UTLauncher.Core.manifest.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="UTLauncher.Core.Tests" />
+  </ItemGroup>
+
 </Project>

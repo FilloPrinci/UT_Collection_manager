@@ -70,7 +70,9 @@ public static class InstallCommand
         var processRunner = new ProcessRunner(loggerFactory.CreateLogger<ProcessRunner>());
         var registryPath = Path.Combine(platform.GetRootDirectory(), "installations.json");
         var registry = new InstallationRegistry(registryPath);
+        var systemLibraryLocator = new SystemLibraryLocator(processRunner);
         var windowsDependencyInstaller = new WindowsDependencyInstaller(downloader, processRunner, loggerFactory.CreateLogger<WindowsDependencyInstaller>());
+        var linuxDependencyInstaller = new LinuxDependencyInstaller(systemLibraryLocator, processRunner, loggerFactory.CreateLogger<LinuxDependencyInstaller>());
         var progress = new ConsoleProgressReporter();
 
         try
@@ -94,7 +96,6 @@ public static class InstallCommand
             else if (gameId == "ut2004")
             {
                 var toolManager = new ToolManager(downloader, platform);
-                var systemLibraryLocator = new SystemLibraryLocator(processRunner);
                 var installer = new Ut2004Installer(
                     downloader,
                     isoExtractor,
@@ -103,6 +104,7 @@ public static class InstallCommand
                     toolManager,
                     systemLibraryLocator,
                     windowsDependencyInstaller,
+                    linuxDependencyInstaller,
                     registry,
                     platform,
                     loggerFactory.CreateLogger<Ut2004Installer>());
@@ -117,6 +119,7 @@ public static class InstallCommand
                     archiveExtractor,
                     processRunner,
                     windowsDependencyInstaller,
+                    linuxDependencyInstaller,
                     registry,
                     platform,
                     loggerFactory.CreateLogger<Ut99Installer>());

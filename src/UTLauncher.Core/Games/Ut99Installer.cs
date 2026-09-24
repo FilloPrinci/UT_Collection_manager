@@ -15,6 +15,7 @@ public sealed class Ut99Installer(
     ArchiveExtractor archiveExtractor,
     ProcessRunner processRunner,
     WindowsDependencyInstaller windowsDependencyInstaller,
+    LinuxDependencyInstaller linuxDependencyInstaller,
     InstallationRegistry registry,
     IPlatform platform,
     ILogger<Ut99Installer> logger)
@@ -108,6 +109,12 @@ public sealed class Ut99Installer(
         ApplySpecialFixes(destination);
 
         await windowsDependencyInstaller.EnsureInstalledAsync(game, installerDirectory, progress, cancellationToken)
+            .ConfigureAwait(false);
+
+        // UT99's Linux patch bundles no fallback for OpenAL (unlike UT2004): without it,
+        // ALAudio.so fails to load and the game errors out at startup with "Can't find file for
+        // package ALAudio".
+        await linuxDependencyInstaller.EnsureInstalledAsync(["libopenal.so.1"], progress, cancellationToken)
             .ConfigureAwait(false);
 
         var record = new InstallationRecord(

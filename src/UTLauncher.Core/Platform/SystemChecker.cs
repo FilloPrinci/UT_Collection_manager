@@ -84,17 +84,36 @@ public sealed class SystemChecker(SystemLibraryLocator libraryLocator)
         }
     }
 
-    public static string? InstallHintFor(string? distroId, string libraryName) => (distroId, libraryName) switch
+    public static string? InstallHintFor(string? distroId, string libraryName)
     {
-        ("fedora", "libopenal.so.1") => "sudo dnf install openal-soft",
-        ("fedora", "libSDL3.so.0") => "sudo dnf install SDL3",
-        ("fedora", "libomp.so.5") => "sudo dnf install libomp",
-        ("ubuntu" or "debian" or "linuxmint", "libopenal.so.1") => "sudo apt install libopenal1",
-        ("ubuntu" or "debian" or "linuxmint", "libSDL3.so.0") => "sudo apt install libsdl3-0",
-        ("ubuntu" or "debian" or "linuxmint", "libomp.so.5") => "sudo apt install libomp5",
-        ("arch" or "endeavouros" or "manjaro", "libopenal.so.1") => "sudo pacman -S openal",
-        ("arch" or "endeavouros" or "manjaro", "libSDL3.so.0") => "sudo pacman -S sdl3",
-        ("arch" or "endeavouros" or "manjaro", "libomp.so.5") => "sudo pacman -S openmp",
+        var packageName = PackageNameFor(distroId, libraryName);
+        if (packageName is null)
+        {
+            return null;
+        }
+
+        return distroId switch
+        {
+            "fedora" => $"sudo dnf install {packageName}",
+            "ubuntu" or "debian" or "linuxmint" => $"sudo apt install {packageName}",
+            "arch" or "endeavouros" or "manjaro" => $"sudo pacman -S {packageName}",
+            _ => null,
+        };
+    }
+
+    // Shared with LinuxDependencyInstaller (the automatic-install counterpart to this hint) so
+    // the package name is only ever listed once per distro/library.
+    internal static string? PackageNameFor(string? distroId, string libraryName) => (distroId, libraryName) switch
+    {
+        ("fedora", "libopenal.so.1") => "openal-soft",
+        ("fedora", "libSDL3.so.0") => "SDL3",
+        ("fedora", "libomp.so.5") => "libomp",
+        ("ubuntu" or "debian" or "linuxmint", "libopenal.so.1") => "libopenal1",
+        ("ubuntu" or "debian" or "linuxmint", "libSDL3.so.0") => "libsdl3-0",
+        ("ubuntu" or "debian" or "linuxmint", "libomp.so.5") => "libomp5",
+        ("arch" or "endeavouros" or "manjaro", "libopenal.so.1") => "openal",
+        ("arch" or "endeavouros" or "manjaro", "libSDL3.so.0") => "sdl3",
+        ("arch" or "endeavouros" or "manjaro", "libomp.so.5") => "openmp",
         _ => null,
     };
 }

@@ -18,6 +18,7 @@ public sealed class Ut2004Installer(
     ToolManager toolManager,
     SystemLibraryLocator systemLibraryLocator,
     WindowsDependencyInstaller windowsDependencyInstaller,
+    LinuxDependencyInstaller linuxDependencyInstaller,
     InstallationRegistry registry,
     IPlatform platform,
     ILogger<Ut2004Installer> logger)
@@ -127,6 +128,12 @@ public sealed class Ut2004Installer(
 
         MakeGameBinaryExecutable(destination);
         RemoveWrongCaseFiles(destination);
+
+        // Runs before the system-preference check right below so a library installed just now
+        // (rather than already present) is still picked up and the redundant bundled copy removed.
+        await linuxDependencyInstaller
+            .EnsureInstalledAsync(["libopenal.so.1", "libSDL3.so.0", "libomp.so.5"], progress, cancellationToken)
+            .ConfigureAwait(false);
         await ApplyLibraryPreferenceFixesAsync(destination, cancellationToken).ConfigureAwait(false);
         FixMainMenuClass(Path.Combine(destination, SystemFolderName, "UT2004.ini"));
 
